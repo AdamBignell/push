@@ -1,7 +1,8 @@
 #include <Box2D/Box2D.h>
 #include <GLFW/glfw3.h>
-
 #include <vector>
+
+// Note that the headers for are all push source files are found here
 
 enum _entityCategory {
   BOXBOUNDARY = 0x1,
@@ -107,6 +108,9 @@ public:
    World& world;
   double size;
 
+  double drive_gain; // Scale driving speed
+  double turn_gain; // Scale turning speed
+
   double charge; // joules
   double charge_max; // maximum storage capacity
   double charge_delta; // rate of change of charge
@@ -123,13 +127,15 @@ public:
   //  b2PrismaticJoint* joint;
   
   Robot( World& world, 
-	 double x, double y, double a,  // pose
-	 double size=0.5, 
-	 double charge=100.0, 
-	 double charge_max=100.0,
-	 double input_efficiency=0.5,
-	 double output_metabolic=0.01,
-	 double output_efficiency=0.1 );  
+   double x, double y, double a,  // pose
+   double size=0.5,
+   double drive_gain=5.0,
+   double turn_gain=5.0,
+   double charge=100.0, 
+   double charge_max=100.0,
+   double input_efficiency=0.5,
+   double output_metabolic=0.01,
+   double output_efficiency=0.1 );  
   
   virtual void Update( double timestep );
 

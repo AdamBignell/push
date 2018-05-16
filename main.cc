@@ -4,6 +4,7 @@
 #include <unistd.h> // for usleep(3)
 
 #include <vector>
+#include <math.h>
 #include <iostream>
 
 #include "push.hh"
@@ -47,13 +48,15 @@ public:
   // constructor
   Pusher( World& world, double size, double x, double y, double a  ) : 
     Robot( world, 
-	   x,y,a,
-	   size,
-	   0, // charge start
-	   20, // charge max
-	   0.4 ), // input efficiency
+     x,y,a,
+     size,
+     5, // drive gain
+     20, // turn gain
+     0, // charge start
+     20, // charge max
+     0.4 ), // input efficiency
     //0.1,
-    //	   0 ), // stay charged forever 
+    //0 ), // stay charged forever 
     state( S_PUSH ),
     timeleft( drand48() * TURNMAX ),
     speedx( 0 ),
@@ -69,18 +72,18 @@ public:
   virtual void Update( double timestep )
   {
     if( world.steps % 50 == phase )
-      {	
-	const double fleft =  GetLightIntensityAt( +0.1, -0.1 );
-	const double fright = GetLightIntensityAt( +0.1, +0.1 );
-	
-	const double bleft =  GetLightIntensityAt( -0.1, -0.1 );
-	const double bright = GetLightIntensityAt( -0.1, +0.1 );
-	
-	speedx = 10.0 * ((fright + fleft) - (bright+bleft));
-	speeda = 10.0 * (fright - fleft);
-	
-	SetSpeed( speedx, 0, speeda );
-      }	
+      {  
+  const double fleft =  GetLightIntensityAt( +0.1, -0.1 );
+  const double fright = GetLightIntensityAt( +0.1, +0.1 );
+  
+  const double bleft =  GetLightIntensityAt( -0.1, -0.1 );
+  const double bright = GetLightIntensityAt( -0.1, +0.1 );
+
+  speedx = drive_gain * ((fright + fleft) - (bright+bleft));
+  speeda = turn_gain * (fright - fleft);
+  
+  SetSpeed( speedx, 0, speeda );
+      }  
 
     Robot::Update( timestep ); // inherit underlying behaviour to handle charge/discharge    
   }
@@ -112,7 +115,7 @@ int main( int argc, char* argv[] )
     { "boxes",  required_argument,   NULL,  'b' },
     { "robotsize",  required_argument,   NULL,  'z' },
     { "boxsize",  required_argument,   NULL,  's' },
-    //	{ "help",  optional_argument,   NULL,  'h' },
+    //  { "help",  optional_argument,   NULL,  'h' },
     { NULL, 0, NULL, 0 }
   };
   
@@ -120,50 +123,50 @@ int main( int argc, char* argv[] )
   while ((ch = getopt_long(argc, argv, "w:h:r:b:s:z:", longopts, &optindex)) != -1)
     {
       switch( ch )
-	{
-	case 0: // long option given
-	  printf( "option %s given", longopts[optindex].name );
+  {
+  case 0: // long option given
+    printf( "option %s given", longopts[optindex].name );
           if (optarg)
             printf (" with arg %s", optarg);
           printf ("\n");
-	  break;
-	case 'w':
-	  WIDTH = atof( optarg );
-	  break;
-	case 'h':
-	  HEIGHT = atof( optarg );
-	  break;
-	case 'r':
-	  ROBOTS = atoi( optarg );
-	  break;
-	case 'b':
-	  BOXES = atoi( optarg );
-	  break;
-	case 'z':
-	  robot_size = atof( optarg );
-	  break;
-	case 's':
-	  box_size = atof( optarg );
-	  break;
-	// case 'h':  
-	// case '?':  
-	//   puts( USAGE );
-	//   exit(0);
-	//   break;
-	 default:
-	   printf("unhandled option %c\n", ch );
-	   //puts( USAGE );
-	   exit(0);
-	}
+    break;
+  case 'w':
+    WIDTH = atof( optarg );
+    break;
+  case 'h':
+    HEIGHT = atof( optarg );
+    break;
+  case 'r':
+    ROBOTS = atoi( optarg );
+    break;
+  case 'b':
+    BOXES = atoi( optarg );
+    break;
+  case 'z':
+    robot_size = atof( optarg );
+    break;
+  case 's':
+    box_size = atof( optarg );
+    break;
+  // case 'h':  
+  // case '?':  
+  //   puts( USAGE );
+  //   exit(0);
+  //   break;
+   default:
+     printf("unhandled option %c\n", ch );
+     //puts( USAGE );
+     exit(0);
+  }
     }
   
   GuiWorld world( WIDTH, HEIGHT );
   
   for( int i=0; i<BOXES; i++ )
-    world.AddBox( new Box( world, Box::SHAPE_RECT, box_size,
-  			   WIDTH/4.0 + drand48()*WIDTH*0.5,
-  			   HEIGHT/4.0 + drand48()*HEIGHT*0.5,
-			   drand48() * M_PI ) );
+    world.AddBox( new Box( world, Box::SHAPE_HEX, box_size,
+           WIDTH/4.0 + drand48()*WIDTH*0.5,
+           HEIGHT/4.0 + drand48()*HEIGHT*0.5,
+           drand48() * M_PI ) );
   
   for( int i=0; i<ROBOTS; i++ )
     {
@@ -171,23 +174,30 @@ int main( int argc, char* argv[] )
       double y = HEIGHT/2.0;
       
       while( x > WIDTH*0.2 && x < WIDTH*0.8 && y > HEIGHT*0.2 && y < HEIGHT*0.8 )
-	{
-	  x = drand48() * WIDTH;	  
-	  y = drand48() * HEIGHT;
-	}
+  {
+    x = drand48() * WIDTH;    
+    y = drand48() * HEIGHT;
+  }
       
       world.AddRobot( new Pusher( world, robot_size, x,y, drand48() * M_PI ));
     }
   
   // fill the world with a grid of lights, all off
+  // (width, height, height above arena, brightness)
   world.AddLightGrid( sqrt(LIGHTS), sqrt(LIGHTS), 2.0, 0.0 );
   
-  const double RADMAX = WIDTH/2.0;
-  double RADMIN = 5;//RADMAX-1;
+  double RADMAX = WIDTH/2.0;
+
+  // Default is 5
+  double RADMIN = 6.5;//RADMAX-1;
+
+  // The thickness of the contracting pattern
+  double PATTWIDTH = 32;
 
   double radius = RADMAX;
-  double delta = 0.3;
+  double delta = 0.4;
   double xdelta = 0;
+  double ydelta = 0;
 
   double lside = sqrt(LIGHTS);
   double lx = WIDTH / lside; // distance between lights
@@ -195,49 +205,68 @@ int main( int argc, char* argv[] )
 
   uint64_t maxsteps = 100000L;
 
+  // This is the center of the contracting shape
   double goalx = WIDTH/2.0;
   double goaly = HEIGHT/2.0;
+
+  // Lets us fully contract once and then alter the control strategy
+  // The first contraction collects robots, the rest perform smoothing
+  bool firstContraction = true;
 
   /* Loop until the user closes the window */
   while( !world.RequestShutdown() && world.steps < maxsteps )
     {
       if( world.steps % 100 == 1 ) // every now and again
-	{ 
-	  if( radius < RADMIN ) 
-	    {
-	      delta = -delta;// * 2.0;
-	      //xdelta = 0.1;
-	    }
+      { 
+        if( radius < RADMIN ) 
+          {
+            delta = -delta;// * 2.0;
+            //xdelta = 0.1;
+            if (firstContraction)
+            {
+              firstContraction = false;
+              RADMAX = RADMIN + 5;
+            }
+          }
 
-	  else if( radius > RADMAX ) 
-	    delta = -delta;//downdelta;
+        else if( radius > RADMAX ) 
+          delta = -delta;//downdelta;
 
-	  const double r2 = radius * radius;
-	  
-	  for( int x=0; x<lside; x++ )
-	    for( int y=0; y<lside; y++ )
-	      {
- 		const double cx = (x - goalx) * lx;
-		const double cy = (y - goaly) * ly;
-		const double c2 = cx*cx + cy*cy;
-		
-		world.SetLightIntensity( x+y*lside, 
-					 (fabs( c2 - r2 ) < lside) );
-	      }	  
-#if 0
-	  for( int i=0; i<18; i+=2 )
-	    {
-	      size_t index = letterL[i] + letterL[i+1] * lside;	    
-	      world.SetLightIntensity( index, 1 ); 	    
-	    }
-#endif
-	  
-    
-	  radius +=  delta;	  	  	  
-	  goalx += xdelta;
-	}
+        // We compare with squared distance (see c2)
+        const double r2 = radius * radius;
+        
+        for( int x=0; x<lside; x++ )
+          for( int y=0; y<lside; y++ )
+            {
+              // (Number of lights between) * (distance between lights)
+              const double cx = (x - goalx) * lx;
+              const double cy = (y - goaly) * ly;
+              const double c2 = cx*cx + cy*cy;
+        
+              // Use 1D indexing
+              world.SetLightIntensity( x+y*lside, 
+                       (fabs( c2 - r2 ) < PATTWIDTH) );
+                    // (fabs( c2 - r2 ) < lside) ); Old version: Why is this lside?
+            }    
+        #if 0
+            for( int i=0; i<18; i+=2 )
+              {
+                size_t index = letterL[i] + letterL[i+1] * lside;      
+                world.SetLightIntensity( index, 1 );       
+              }
+        #endif
+        
+        
+        // See above checks with RADMIN and RADMAX
+        // This handles both contracts and dilation
+        radius +=  delta;
+
+        // Optionally move the collected resources
+        // goalx += xdelta;
+        // goaly += ydelta;
+      }
       
-      world.Step( timeStep );	  
+      world.Step( timeStep );    
     }
   
   printf( "Completed %lu steps.", world.steps );

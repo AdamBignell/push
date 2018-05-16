@@ -4,24 +4,28 @@
 double AngleNormalize( double a )
 {
   while( a < -M_PI ) a += 2.0*M_PI;
-  while( a >  M_PI ) a -= 2.0*M_PI;	 
+  while( a >  M_PI ) a -= 2.0*M_PI;   
   return a;
-}	 
+}   
 
 
 // constructor
 Robot::Robot( World& world, 
-	      double x, 
-	      double y, 
-	      double a, 
-	      double size,
-	      double charge,
-	      double charge_max,
-	      double input_efficiency,
-	      double output_metabolic, 
-	      double output_efficiency ) : 
+        double x, 
+        double y, 
+        double a, 
+        double size,
+        double drive_gain,
+        double turn_gain,
+        double charge,
+        double charge_max,
+        double input_efficiency,
+        double output_metabolic, 
+        double output_efficiency ) : 
   world(world),
   size( size ),
+  drive_gain(drive_gain),
+  turn_gain(turn_gain),
   charge(charge),
   charge_max(charge_max),
   charge_delta(0),
@@ -39,14 +43,17 @@ Robot::Robot( World& world,
   body = world.b2world->CreateBody(&bodyDef);
   //bumper = world.b2world->CreateBody(&bodyDef);
   
-  b2PolygonShape dynamicBox;
-  dynamicBox.SetAsBox( size/2.0, size/2.0 );
+  //Use square robots
+  b2PolygonShape botShape;
+  botShape.SetAsBox( size/2.0, size/2.0 );
 
-  //b2CircleShape circle;
-  //circle.m_radius = size/2.0;
+  //Use circular robots
+  //b2CircleShape botShape;
+  //botShape.m_p.Set(0, 0); 
+  //botShape.m_radius = size/2.0; //use class variable
   
   b2FixtureDef fixtureDef;
-  fixtureDef.shape = &dynamicBox;    
+  fixtureDef.shape = &botShape;    
   fixtureDef.density = 10;
   fixtureDef.friction = 1.0;
 
@@ -57,7 +64,7 @@ Robot::Robot( World& world,
   body->CreateFixture(&fixtureDef);
   
   // place assembled robot in the world
-  body->SetTransform( b2Vec2( x, y ), a );	
+  body->SetTransform( b2Vec2( x, y ), a );  
 }
 
 double Robot::GetLightIntensity( void ) const
@@ -94,7 +101,7 @@ double Robot::GetLightIntensityAt( double x, double y ) const
 //     {
 //       // discard if it's the same robot
 //       if( other == this )
-// 	continue;
+//   continue;
       
 //       // discard if it's out of range. We put off computing the
 //       // hypotenuse as long as we can, as it's relatively expensive.
@@ -105,7 +112,7 @@ double Robot::GetLightIntensityAt( double x, double y ) const
 //       const int32_t range = hypot( dx, dy );
 
 //       if( range > MAXRANGE ) 
-// 	continue; 
+//   continue; 
       
 //       // discard if it's out of field of view 
 //       const double absolute_heading = atan2( dy, dx );
@@ -121,7 +128,7 @@ double Robot::GetLightIntensityAt( double x, double y ) const
       
 //       // discard if we've seen something closer in this pixel already.
 //       if( pixels[pixel] < range) 
-// 	continue;
+//   continue;
       
 //       // if we made it here, we see this other robot in this pixel.
 //       pixels[pixel] = range;
@@ -159,12 +166,12 @@ double Robot::GetLightIntensityAt( double x, double y ) const
 //       double dx =  hispose.x - mypose.x;
       
 //       // if( fabs(dx) > MAXRANGE )
-//       // 	continue; // out of range
+//       //   continue; // out of range
       
 //       double dy = hispose.y - mypose.y;
       
 //       // if( fabs(dy) > MAXRANGE )
-//       // 	continue; // out of range
+//       //   continue; // out of range
       
 //       // size of the box
 //       // assert( other->body->m_shapeList->m_type == e_polyShape);
@@ -173,7 +180,7 @@ double Robot::GetLightIntensityAt( double x, double y ) const
 //       // todo - box size hack
 //       double range = hypot( dx, dy ) - 0.15;
 //       if( range > MAXRANGE ) 
-// 	continue; 
+//   continue; 
       
 //       // discard if it's out of field of view 
 //       double absolute_heading = atan2( dy, dx );
@@ -193,7 +200,7 @@ double Robot::GetLightIntensityAt( double x, double y ) const
       
 //       // discard if we've seen something closer in this pixel already.
 //       if( targets[pixel] < range) 
-// 	continue;
+//   continue;
       
 //       // if we made it here, we see this other robot in this pixel.
 //       targets[pixel] = range;
