@@ -164,3 +164,12 @@ void World::Step(double timestep)
 
   steps++;
 }
+
+  // Get the minimum contracted size
+  // Use total box area to estimate
+  double World::GetRadMin(double numBoxes, double boxArea)
+  {
+    double totalArea = numBoxes*boxArea;
+    double radMin = sqrt(totalArea/M_PI);
+    return radMin;
+  }

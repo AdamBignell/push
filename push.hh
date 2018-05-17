@@ -59,6 +59,10 @@ public:
 
   // perform one simulation step
   void Step(double timestep);
+
+  // Get the minimum contracted size
+  // Use total box area to estimate
+  virtual double GetRadMin(double numBoxes, double boxSize);
 };
 
 class GuiWorld : public World
@@ -159,7 +163,8 @@ public:
   typedef enum
   {
     SHAPE_RECT = 0,
-    SHAPE_HEX
+    SHAPE_HEX,
+    SHAPE_CIRC
   } box_shape_t;
 
   b2Body *body;

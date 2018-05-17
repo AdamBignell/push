@@ -54,8 +54,8 @@ public:
                                                                           0,    // charge start
                                                                           20,   // charge max
                                                                           0.4), // input efficiency
-                                                                                //0.1,
-                                                                                //0 ), // stay charged forever
+                                                                          //0.1,
+                                                                          //0), // stay charged forever
                                                                     state(S_PUSH),
                                                                     timeleft(drand48() * TURNMAX),
                                                                     speedx(0),
@@ -187,7 +187,11 @@ int main(int argc, char *argv[])
   double RADMAX = WIDTH / 2.0;
 
   // Default is 5
-  double RADMIN = 6.5; //RADMAX-1;
+  // We shoukd set the RAD-Min intelligently
+  // For now, solve for approximate bounding circle
+  // Note that we can still do this for any simple polygons,
+  // and that this is probably a reasonable restriction
+  double RADMIN = world.GetRadMin(BOXES, box_size*box_size); //RADMAX-1;
 
   // The thickness of the contracting pattern
   double PATTWIDTH = 32;
@@ -210,57 +214,63 @@ int main(int argc, char *argv[])
   // Lets us fully contract once and then alter the control strategy
   // The first contraction collects robots, the rest perform smoothing
   bool firstContraction = true;
+  int holdFor = 0;
 
   /* Loop until the user closes the window */
   while (!world.RequestShutdown() && world.steps < maxsteps)
   {
     if (world.steps % 100 == 1) // every now and again
     {
-      if (radius < RADMIN)
+      if (holdFor != 0) holdFor--;
+      else
       {
-        delta = -delta; // * 2.0;
-        //xdelta = 0.1;
-        if (firstContraction)
+        if (radius < RADMIN)
         {
-          firstContraction = false;
-          RADMAX = RADMIN + 5;
+          delta = -delta; // * 2.0;
+          //xdelta = 0.1;
+          // if (firstContraction)
+          // {
+          //   firstContraction = false;
+          //   delta = 0;
+          // }
+          holdFor = 10;
         }
+
+        else if (radius > RADMAX)
+          delta = -delta; //downdelta;
+
+        // We compare with squared distance (see c2)
+        const double r2 = radius * radius;
+
+        for (int x = 0; x < lside; x++)
+          for (int y = 0; y < lside; y++)
+          {
+            // (Number of lights between) * (distance between lights)
+            const double cx = (x - goalx) * lx;
+            const double cy = (y - goaly) * ly;
+            const double c2 = cx * cx + cy * cy;
+
+            // Use 1D indexing
+            world.SetLightIntensity(x + y * lside,
+                                    (fabs(c2 - r2) < PATTWIDTH));
+            // (fabs( c2 - r2 ) < lside) ); Old version: Why is this lside?
+          }
+  #if 0
+              for( int i=0; i<18; i+=2 )
+                {
+                  size_t index = letterL[i] + letterL[i+1] * lside;      
+                  world.SetLightIntensity( index, 1 );       
+                }
+  #endif
+
+        // See above checks with RADMIN and RADMAX
+        // This handles both contracts and dilation
+        radius += delta;
+
+        // Optionally move the collected resources
+        // goalx += xdelta;
+        // goaly += ydelta;
       }
-
-      else if (radius > RADMAX)
-        delta = -delta; //downdelta;
-
-      // We compare with squared distance (see c2)
-      const double r2 = radius * radius;
-
-      for (int x = 0; x < lside; x++)
-        for (int y = 0; y < lside; y++)
-        {
-          // (Number of lights between) * (distance between lights)
-          const double cx = (x - goalx) * lx;
-          const double cy = (y - goaly) * ly;
-          const double c2 = cx * cx + cy * cy;
-
-          // Use 1D indexing
-          world.SetLightIntensity(x + y * lside,
-                                  (fabs(c2 - r2) < PATTWIDTH));
-          // (fabs( c2 - r2 ) < lside) ); Old version: Why is this lside?
-        }
-#if 0
-            for( int i=0; i<18; i+=2 )
-              {
-                size_t index = letterL[i] + letterL[i+1] * lside;      
-                world.SetLightIntensity( index, 1 );       
-              }
-#endif
-
-      // See above checks with RADMIN and RADMAX
-      // This handles both contracts and dilation
-      radius += delta;
-
-      // Optionally move the collected resources
-      // goalx += xdelta;
-      // goaly += ydelta;
     }
 
     world.Step(timeStep);

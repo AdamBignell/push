@@ -7,6 +7,7 @@ Box::Box( World& world, box_shape_t shape, double size, double x, double y, doub
     size(size)
 { 
   b2PolygonShape dynamicBox;
+  b2CircleShape dynamicCircle;
   
   switch( shape )
     {	    
@@ -23,15 +24,22 @@ Box::Box( World& world, box_shape_t shape, double size, double x, double y, doub
 	}
 	
 	dynamicBox.Set(verts,6);
-      }
       break;
+      }
+    case SHAPE_CIRC:
+    {
+        dynamicCircle.m_p.Set(0, 0); //position, relative to body position
+        dynamicCircle.m_radius = size/2.0; //radius
+      break;
+    }
     default:
       std::cout << "invalid shape number " << shape << std::endl;
       break;
     }
   
   b2FixtureDef fixtureDef;
-  fixtureDef.shape = &dynamicBox;
+  if (shape != SHAPE_CIRC) fixtureDef.shape = &dynamicBox;
+  else fixtureDef.shape = &dynamicCircle;
   fixtureDef.density = 0.5;
   fixtureDef.friction = 1.0;
   fixtureDef.restitution = 0.1;
