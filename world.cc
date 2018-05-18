@@ -7,7 +7,7 @@ World::World(double width, double height, double numLights) : steps(0),
                                                               b2world(new b2World(b2Vec2(0, 0))), // gravity
                                                               lights()                            //empty vector
 {
-  // set interior box container
+  //set interior box container
   b2BodyDef boxWallDef;
   b2PolygonShape groundBox;
   groundBox.SetAsBox(width / 4.0, 0.01f);

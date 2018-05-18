@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
   // Note that we don't want the center of the
   // ring perimeter to actually hit the wall.
   // We only need the gradient to
-  double RADMAX = (WIDTH / 2.0) - 1;
+  double RADMAX = (WIDTH / 2.0);
   double radius = RADMAX;
 
   // Default is 5
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
   // For now, solve for approximate bounding circle
   // Note that we can still do this for any simple polygons,
   // and that this is probably a reasonable restriction
-  double RADMIN = 5; //world.GetRadMin(BOXES, box_size*box_size); //RADMAX-1;
+  double RADMIN = world.GetRadMin(BOXES, box_size*box_size); //RADMAX-1;
 
   uint64_t maxsteps = 100000L;
 
@@ -233,6 +233,8 @@ int main(int argc, char *argv[])
       {
         holdFor--;
         world.UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH);
+        if (holdFor == 0)
+          radius += delta;
       }
       else
       {
@@ -242,6 +244,7 @@ int main(int argc, char *argv[])
           //xdelta = 0.1;
           if (holdAtMin)
             holdFor = 10;
+          continue;
         }
 
         else if (radius > RADMAX)
@@ -259,7 +262,8 @@ int main(int argc, char *argv[])
 
         // See above checks with RADMIN and RADMAX
         // This handles both contracts and dilation
-        radius += delta;
+        if (holdFor == 0)
+          radius += delta;
 
         // Optionally move the collected resources
         // goalx += xdelta;
