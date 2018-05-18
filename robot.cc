@@ -44,13 +44,13 @@ Robot::Robot(World &world,
   //bumper = world.b2world->CreateBody(&bodyDef);
 
   //Use square robots
-  b2PolygonShape botShape;
-  botShape.SetAsBox(size / 2.0, size / 2.0);
+  // b2PolygonShape botShape;
+  // botShape.SetAsBox(size / 2.0, size / 2.0);
 
   //Use circular robots
-  //b2CircleShape botShape;
-  //botShape.m_p.Set(0, 0);
-  //botShape.m_radius = size/2.0; //use class variable
+  b2CircleShape botShape;
+  botShape.m_p.Set(0, 0);
+  botShape.m_radius = size/2.0; //use class variable
 
   b2FixtureDef fixtureDef;
   fixtureDef.shape = &botShape;

@@ -12,7 +12,7 @@ bool GuiWorld::paused = false;
 bool GuiWorld::step = false;
 int GuiWorld::skip = 10;
 
-void DrawDisk(double cx, double cy, double r);
+void DrawDisk(double cx, double cy, double r, const double color[3]);
 
 double RTOD(double rad)
 {
@@ -27,7 +27,7 @@ double RTOD(double rad)
 // }
 
 void key_callback(GLFWwindow *window,
-									int key, int scancode, int action, int mods)
+				  int key, int scancode, int action, int mods)
 {
 	if (action == GLFW_PRESS)
 		switch (key)
@@ -58,7 +58,7 @@ void key_callback(GLFWwindow *window,
 		}
 }
 
-void DrawBody(b2Body *b, const double color[3])
+void DrawBody(b2Body *b, const double color[3], double size)
 {
 	for (b2Fixture *f = b->GetFixtureList(); f; f = f->GetNext())
 	{
@@ -69,7 +69,8 @@ void DrawBody(b2Body *b, const double color[3])
 			b2CircleShape *circle = (b2CircleShape *)f->GetShape();
 
 			b2Vec2 pos = b->GetPosition();
-			DrawDisk(pos.x, pos.y, 0.2);
+			// The size was hardcoded all along
+			DrawDisk(pos.x, pos.y, size / 2.0, color);
 		}
 		break;
 		case b2Shape::e_polygon:
@@ -111,7 +112,7 @@ void DrawBody(b2Body *b, const double color[3])
 	}
 }
 
-void DrawDisk(double cx, double cy, double r)
+void DrawDisk(double cx, double cy, double r, const double color[3])
 {
 	const int num_segments = 32.0 * sqrtf(r);
 
@@ -122,11 +123,19 @@ void DrawDisk(double cx, double cy, double r)
 
 	double x = r; //we start at angle = 0
 	double y = 0;
-
+	if (color != NULL)
+	{
+		glColor3dv(color);
+	}
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glBegin(GL_TRIANGLE_STRIP);
 	for (int ii = 0; ii < num_segments; ii++)
 	{
+		if (color != NULL)
+			glColor3f(color[0] / 5, color[1] / 5, color[2] / 5);
 		glVertex2f(x + cx, y + cy);
+		if (color != NULL)
+			glColor3dv(color);
 		glVertex2f(cx, cy);
 
 		//apply the rotation matrix
@@ -135,15 +144,18 @@ void DrawDisk(double cx, double cy, double r)
 		y = s * t + c * y;
 	}
 
+	glBegin(GL_POLYGON);
+	if (color != NULL)
+		glColor3f(color[0] / 5, color[1] / 5, color[2] / 5);
 	glVertex2f(r + cx, 0 + cy); // first point again to close disk
 
 	glEnd();
 }
 
 GuiWorld::GuiWorld(double width, double height, double numLights) : World(width, height, numLights),
-																									window(NULL),
-																									draw_interval(skip),
-																									lights_need_redraw(true)
+																	window(NULL),
+																	draw_interval(skip),
+																	lights_need_redraw(true)
 {
 	srand48(time(NULL));
 
@@ -212,13 +224,13 @@ void GuiWorld::Step(double timestep)
 
 		// draw the walls
 		for (int i = 0; i < 4; i++)
-			DrawBody(boxWall[i], c_gray);
+			DrawBody(boxWall[i], c_gray, -1);
 
 		for (int i = 0; i < 4; i++)
-			DrawBody(robotWall[i], c_gray);
+			DrawBody(robotWall[i], c_gray, -1);
 
 		for (auto &b : boxes)
-			DrawBody(b->body, c_gray);
+			DrawBody(b->body, c_gray, b->size);
 
 		// Draw the robots
 		for (auto &r : robots)
@@ -228,7 +240,7 @@ void GuiWorld::Step(double timestep)
 			col[1] = r->charge / r->charge_max;
 			col[2] = 0;
 
-			DrawBody(r->body, col);
+			DrawBody(r->body, col, r->size);
 		}
 
 		// draw a nose on the robot
@@ -243,11 +255,11 @@ void GuiWorld::Step(double timestep)
 			const double a = t.q.GetAngle();
 
 			glVertex2f(t.p.x + r->size / 2.0 * cos(a),
-								 t.p.y + r->size / 2.0 * sin(a));
+					   t.p.y + r->size / 2.0 * sin(a));
 			glVertex2f(t.p.x + r->size / 3.0 * cos(a + 0.5),
-								 t.p.y + r->size / 3.0 * sin(a + 0.5));
+					   t.p.y + r->size / 3.0 * sin(a + 0.5));
 			glVertex2f(t.p.x + r->size / 3.0 * cos(a - 0.5),
-								 t.p.y + r->size / 3.0 * sin(a - 0.5));
+					   t.p.y + r->size / 3.0 * sin(a - 0.5));
 		}
 		glEnd();
 
@@ -298,7 +310,7 @@ void GuiWorld::Step(double timestep)
 		for (const auto &l : lights)
 		{
 			glColor4f(1, 1, 0, l->intensity);
-			DrawDisk(l->x, l->y, 0.05);
+			DrawDisk(l->x, l->y, 0.05, NULL);
 		}
 
 		for (int y = 0; y < side; y++)
@@ -311,7 +323,7 @@ void GuiWorld::Step(double timestep)
 				glColor4f(1, 1, 0, bright[y * side + x]);
 
 				glRectf(wx - dx / 2.0, wy - dy / 2.0,
-								wx + dx / 2.0, wy + dy / 2.0);
+						wx + dx / 2.0, wy + dy / 2.0);
 			}
 
 		/* Swap front and back buffers */

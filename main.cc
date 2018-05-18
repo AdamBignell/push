@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
   GuiWorld world(WIDTH, HEIGHT, LIGHTS);
 
   for (int i = 0; i < BOXES; i++)
-    world.AddBox(new Box(world, Box::SHAPE_HEX, box_size,
+    world.AddBox(new Box(world, Box::SHAPE_CIRC, box_size,
                          WIDTH / 4.0 + drand48() * WIDTH * 0.5,
                          HEIGHT / 4.0 + drand48() * HEIGHT * 0.5,
                          drand48() * M_PI));

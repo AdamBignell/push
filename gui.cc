@@ -59,7 +59,8 @@ void key_callback( GLFWwindow* window,
 }
 
 
-void DrawBody( b2Body* b, const float color[3] )
+// Size is used to draw circles. -1 encodes that the parameter is unused
+void DrawBody( b2Body* b, const float color[3] , double size)
 {
   for (b2Fixture* f = b->GetFixtureList(); f; f = f->GetNext()) 
     {
@@ -110,7 +111,7 @@ void DrawBody( b2Body* b, const float color[3] )
 }
 
 
-void DrawDisk(float cx, float cy, float r ) 
+void DrawDisk(float cx, float cy, float r , const double color[3]) 
 { 
   const int num_segments = 32.0 * sqrtf( r );
   
@@ -123,6 +124,7 @@ void DrawDisk(float cx, float cy, float r )
   float y = 0; 
   
   //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+  glColor3dv(color);
   glBegin(GL_TRIANGLE_STRIP); 
   for(int ii = 0; ii < num_segments; ii++) 
     { 
@@ -200,12 +202,12 @@ void GuiWorld::Step( float timestep,
       glClear(GL_COLOR_BUFFER_BIT);	
       
       for( int i=0; i<bodies.size(); i++ )
-	DrawBody( bodies[i]->body, c_gray );
+	DrawBody( bodies[i]->body, c_gray , -1);
       
       for( int i=0; i<robots.size(); i++ )
 	{
-	  DrawBody( robots[i]->body, c_red );
-	  DrawBody( robots[i]->bumper, c_darkred );
+	  DrawBody( robots[i]->body, c_red , -1);
+	  DrawBody( robots[i]->bumper, c_darkred , -1);
 	}
       
       // draw a nose on the robot
