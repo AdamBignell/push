@@ -33,7 +33,7 @@ class World
 public:
   b2World *b2world;
 
-  double width, height;
+  double width, height, numLights;
 
   b2Body *boxWall[4];
   b2Body *robotWall[4];
@@ -43,7 +43,7 @@ public:
   std::vector<Box *> boxes;
   std::vector<Robot *> robots;
 
-  World(double width, double height);
+  World(double width, double height, double numLights);
 
   virtual void AddRobot(Robot *robot);
   virtual void AddBox(Box *box);
@@ -53,6 +53,13 @@ public:
   // set the intensity of the light at @index. If @index is out of
   // range, the call has no effect
   virtual void SetLightIntensity(size_t index, double intensity);
+
+  // Lets us update the pattern of light in one function call with a few parameters
+  // (goalx, goaly): center of contraction
+  // probOn: How likely an 'on' is likely to actually be on. Useful for robot spacing
+  // radius: Determines how contracted we are
+  // pattwidth: The width of the contracting patten (note this isn't diameter)
+  void UpdateLightPattern(double goalx, double goaly, double probOn, double radius, double pattwidth);
 
   // return instantaneous light intensity from all sources
   double GetLightIntensityAt(double x, double y);
@@ -78,7 +85,7 @@ public:
   GLFWwindow *window;
   int draw_interval;
 
-  GuiWorld(double width, double height);
+  GuiWorld(double width, double height, double numLights);
   ~GuiWorld();
 
   virtual void Step(double timestep);

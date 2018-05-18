@@ -140,7 +140,7 @@ void DrawDisk(double cx, double cy, double r)
 	glEnd();
 }
 
-GuiWorld::GuiWorld(double width, double height) : World(width, height),
+GuiWorld::GuiWorld(double width, double height, double numLights) : World(width, height, numLights),
 																									window(NULL),
 																									draw_interval(skip),
 																									lights_need_redraw(true)

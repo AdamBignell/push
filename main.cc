@@ -54,8 +54,8 @@ public:
                                                                           0,    // charge start
                                                                           20,   // charge max
                                                                           0.4), // input efficiency
-                                                                          //0.1,
-                                                                          //0), // stay charged forever
+                                                                                //0.1,
+                                                                                //0), // stay charged forever
                                                                     state(S_PUSH),
                                                                     timeleft(drand48() * TURNMAX),
                                                                     speedx(0),
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  GuiWorld world(WIDTH, HEIGHT);
+  GuiWorld world(WIDTH, HEIGHT, LIGHTS);
 
   for (int i = 0; i < BOXES; i++)
     world.AddBox(new Box(world, Box::SHAPE_HEX, box_size,
@@ -184,19 +184,9 @@ int main(int argc, char *argv[])
   // (width, height, height above arena, brightness)
   world.AddLightGrid(sqrt(LIGHTS), sqrt(LIGHTS), 2.0, 0.0);
 
-  double RADMAX = WIDTH / 2.0;
-
-  // Default is 5
-  // We shoukd set the RAD-Min intelligently
-  // For now, solve for approximate bounding circle
-  // Note that we can still do this for any simple polygons,
-  // and that this is probably a reasonable restriction
-  double RADMIN = world.GetRadMin(BOXES, box_size*box_size); //RADMAX-1;
-
   // The thickness of the contracting pattern
-  double PATTWIDTH = 32;
+  double PATTWIDTH = robot_size * 10;
 
-  double radius = RADMAX;
   double delta = 0.4;
   double xdelta = 0;
   double ydelta = 0;
@@ -204,6 +194,19 @@ int main(int argc, char *argv[])
   double lside = sqrt(LIGHTS);
   double lx = WIDTH / lside; // distance between lights
   double ly = HEIGHT / lside;
+
+  // Note that we don't want the center of the
+  // ring perimeter to actually hit the wall.
+  // We only need the gradient to
+  double RADMAX = (WIDTH / 2.0) - 1;
+  double radius = RADMAX;
+
+  // Default is 5
+  // We shoukd set the RAD-Min intelligently
+  // For now, solve for approximate bounding circle
+  // Note that we can still do this for any simple polygons,
+  // and that this is probably a reasonable restriction
+  double RADMIN = 5; //world.GetRadMin(BOXES, box_size*box_size); //RADMAX-1;
 
   uint64_t maxsteps = 100000L;
 
@@ -213,7 +216,12 @@ int main(int argc, char *argv[])
 
   // Lets us fully contract once and then alter the control strategy
   // The first contraction collects robots, the rest perform smoothing
-  bool firstContraction = true;
+  // bool firstContraction = true;
+
+  // Can stop this behaviour by setting this to false
+  bool holdAtMin = true;
+
+  // Initialization
   int holdFor = 0;
 
   /* Loop until the user closes the window */
@@ -221,47 +229,33 @@ int main(int argc, char *argv[])
   {
     if (world.steps % 100 == 1) // every now and again
     {
-      if (holdFor != 0) holdFor--;
+      if (holdFor != 0 && holdAtMin)
+      {
+        holdFor--;
+        world.UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH);
+      }
       else
       {
         if (radius < RADMIN)
         {
           delta = -delta; // * 2.0;
           //xdelta = 0.1;
-          // if (firstContraction)
-          // {
-          //   firstContraction = false;
-          //   delta = 0;
-          // }
-          holdFor = 10;
+          if (holdAtMin)
+            holdFor = 10;
         }
 
         else if (radius > RADMAX)
           delta = -delta; //downdelta;
 
-        // We compare with squared distance (see c2)
-        const double r2 = radius * radius;
-
-        for (int x = 0; x < lside; x++)
-          for (int y = 0; y < lside; y++)
-          {
-            // (Number of lights between) * (distance between lights)
-            const double cx = (x - goalx) * lx;
-            const double cy = (y - goaly) * ly;
-            const double c2 = cx * cx + cy * cy;
-
-            // Use 1D indexing
-            world.SetLightIntensity(x + y * lside,
-                                    (fabs(c2 - r2) < PATTWIDTH));
-            // (fabs( c2 - r2 ) < lside) ); Old version: Why is this lside?
-          }
-  #if 0
+        // Turns all necessary lights on for a specific amount of contraction (radius)
+        world.UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH);
+#if 0
               for( int i=0; i<18; i+=2 )
                 {
                   size_t index = letterL[i] + letterL[i+1] * lside;      
                   world.SetLightIntensity( index, 1 );       
                 }
-  #endif
+#endif
 
         // See above checks with RADMIN and RADMAX
         // This handles both contracts and dilation

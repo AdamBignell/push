@@ -1,10 +1,11 @@
 #include "push.hh"
 
-World::World(double width, double height) : steps(0),
-                                            width(width),
-                                            height(height),
-                                            b2world(new b2World(b2Vec2(0, 0))), // gravity
-                                            lights()                            //empty vector
+World::World(double width, double height, double numLights) : steps(0),
+                                                              width(width),
+                                                              height(height),
+                                                              numLights(numLights),
+                                                              b2world(new b2World(b2Vec2(0, 0))), // gravity
+                                                              lights()                            //empty vector
 {
   // set interior box container
   b2BodyDef boxWallDef;
@@ -87,6 +88,30 @@ void World::SetLightIntensity(size_t index, double intensity)
     lights[index]->intensity = intensity;
 }
 
+void World::UpdateLightPattern(double goalx, double goaly, double probOn, double radius, double PATTWIDTH)
+{
+  double lside = sqrt(numLights); // Questionable
+  double lx = width / lside;
+  double ly = height / lside;
+  double r2 = radius * radius;
+  double randOn, cx, cy, c2;
+  for (int x = 0; x < lside; x++)
+    for (int y = 0; y < lside; y++)
+    {
+      // (Number of lights between) * (distance between lights)
+      cx = (x - goalx) * lx;
+      cy = (y - goaly) * ly;
+      c2 = cx * cx + cy * cy;
+
+      int on = (fabs(c2 - r2) < PATTWIDTH);
+      randOn = ((double)rand() / (RAND_MAX));
+      // Use 1D indexing
+      SetLightIntensity(x + y * lside,
+                        on * (randOn <= probOn));
+      // (fabs( c2 - r2 ) < lside) ); Old version: Why is this lside?
+    }
+}
+
 double World::GetLightIntensityAt(double x, double y)
 {
   // integrate brightness over all light sources
@@ -165,11 +190,11 @@ void World::Step(double timestep)
   steps++;
 }
 
-  // Get the minimum contracted size
-  // Use total box area to estimate
-  double World::GetRadMin(double numBoxes, double boxArea)
-  {
-    double totalArea = numBoxes*boxArea;
-    double radMin = sqrt(totalArea/M_PI);
-    return radMin;
-  }
+// Get the minimum contracted size
+// Use total box area to estimate
+double World::GetRadMin(double numBoxes, double boxArea)
+{
+  double totalArea = numBoxes * boxArea;
+  double radMin = sqrt(totalArea / M_PI);
+  return radMin;
+}
