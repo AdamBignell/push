@@ -15,6 +15,7 @@ Robot::Robot(World &world,
              double x,
              double y,
              double a,
+             robot_shape_t shape,
              double size,
              double drive_gain,
              double turn_gain,
@@ -43,23 +44,30 @@ Robot::Robot(World &world,
   body = world.b2world->CreateBody(&bodyDef);
   //bumper = world.b2world->CreateBody(&bodyDef);
 
-  //Use square robots
-  // b2PolygonShape botShape;
-  // botShape.SetAsBox(size / 2.0, size / 2.0);
-
-  //Use circular robots
-  b2CircleShape botShape;
-  botShape.m_p.Set(0, 0);
-  botShape.m_radius = size/2.0; //use class variable
-
   b2FixtureDef fixtureDef;
-  fixtureDef.shape = &botShape;
   fixtureDef.density = 10;
   fixtureDef.friction = 1.0;
 
   // prevent collision with puck-retaining strings
   fixtureDef.filter.categoryBits = ROBOT;
   fixtureDef.filter.maskBits = ROBOT | BOX | ROBOTBOUNDARY; // not box boundary
+
+  //Use square robots
+  if (shape == SHAPE_RECT)
+  {
+    b2PolygonShape botShape;
+    botShape.SetAsBox(size / 2.0, size / 2.0);
+    fixtureDef.shape = &botShape;
+  }
+  //Use circular robots
+  else if (shape == SHAPE_CIRC)
+  {
+
+    b2CircleShape botShape;
+    botShape.m_p.Set(0, 0);
+    botShape.m_radius = size / 2.0; //use class variable
+    fixtureDef.shape = &botShape;
+  }
 
   body->CreateFixture(&fixtureDef);
 

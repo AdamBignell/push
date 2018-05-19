@@ -119,6 +119,12 @@ public:
   World &world;
   double size;
 
+  typedef enum
+  {
+    SHAPE_RECT = 0,
+    SHAPE_CIRC
+  } robot_shape_t;
+
   double drive_gain; // Scale driving speed
   double turn_gain;  // Scale turning speed
 
@@ -139,6 +145,7 @@ public:
 
   Robot(World &world,
         double x, double y, double a, // pose
+        robot_shape_t shape = SHAPE_RECT, // rectangle
         double size = 0.5,
         double drive_gain = 5.0,
         double turn_gain = 5.0,

@@ -46,25 +46,32 @@ private:
 
 public:
   // constructor
-  Pusher(World &world, double size, double x, double y, double a) : Robot(world,
-                                                                          x, y, a,
-                                                                          size,
-                                                                          5,    // drive gain
-                                                                          20,   // turn gain
-                                                                          0,    // charge start
-                                                                          20,   // charge max
-                                                                          0.4), // input efficiency
-                                                                                //0.1,
-                                                                                //0), // stay charged forever
-                                                                    state(S_PUSH),
-                                                                    timeleft(drand48() * TURNMAX),
-                                                                    speedx(0),
-                                                                    speeda(0),
-                                                                    lastintensity(0),
-                                                                    latch(0),
-                                                                    count(drand48() * 1000.0),
-                                                                    escape(false),
-                                                                    phase(random() % 50)
+  Pusher(World &world,
+         robot_shape_t shape,
+         double size,
+         double x,
+         double y,
+         double a)
+      : Robot(world,
+              x, y, a,
+              shape,
+              size,
+              5,    // drive gain
+              20,   // turn gain
+              0,    // charge start
+              20,   // charge max
+              0.4), // input efficiency
+                    //0.1,
+                    //0), // stay charged forever
+        state(S_PUSH),
+        timeleft(drand48() * TURNMAX),
+        speedx(0),
+        speeda(0),
+        lastintensity(0),
+        latch(0),
+        count(drand48() * 1000.0),
+        escape(false),
+        phase(random() % 50)
   {
   }
 
@@ -107,6 +114,8 @@ int main(int argc, char *argv[])
   double timeStep = 1.0 / 30.0;
   double robot_size = 0.35;
   double box_size = 0.25;
+  Box::box_shape_t box_type = Box::SHAPE_RECT;
+  Pusher::robot_shape_t robot_type = Pusher::SHAPE_RECT;
 
   /* options descriptor */
   static struct option longopts[] = {
@@ -118,7 +127,8 @@ int main(int argc, char *argv[])
       {NULL, 0, NULL, 0}};
 
   int ch = 0, optindex = 0;
-  while ((ch = getopt_long(argc, argv, "w:h:r:b:s:z:", longopts, &optindex)) != -1)
+  char firstChar = 'c';
+  while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y", longopts, &optindex)) != -1)
   {
     switch (ch)
     {
@@ -146,6 +156,23 @@ int main(int argc, char *argv[])
     case 's':
       box_size = atof(optarg);
       break;
+    case 't':
+      //firstChar = optarg[0];
+      if (firstChar == 'C' || firstChar == 'c')
+        //robot_type = Pusher::SHAPE_CIRC; // TODO: This causes a segmentation fault?
+        ;
+      else
+        printf("unhandled robot shape %c\n", firstChar);
+      break;
+    case 'y':
+      //firstChar = optarg[0];
+      if (firstChar == 'H' || firstChar == 'h')
+        box_type = Box::SHAPE_HEX;
+      else if (firstChar == 'C' || firstChar == 'c')
+        box_type = Box::SHAPE_CIRC;
+      else
+        printf("unhandled box shape %c\n", firstChar);
+      break;
       // case 'h':
       // case '?':
       //   puts( USAGE );
@@ -161,7 +188,7 @@ int main(int argc, char *argv[])
   GuiWorld world(WIDTH, HEIGHT, LIGHTS);
 
   for (int i = 0; i < BOXES; i++)
-    world.AddBox(new Box(world, Box::SHAPE_CIRC, box_size,
+    world.AddBox(new Box(world, box_type, box_size,
                          WIDTH / 4.0 + drand48() * WIDTH * 0.5,
                          HEIGHT / 4.0 + drand48() * HEIGHT * 0.5,
                          drand48() * M_PI));
@@ -177,7 +204,7 @@ int main(int argc, char *argv[])
       y = drand48() * HEIGHT;
     }
 
-    world.AddRobot(new Pusher(world, robot_size, x, y, drand48() * M_PI));
+    world.AddRobot(new Pusher(world, robot_type, robot_size, x, y, drand48() * M_PI));
   }
 
   // fill the world with a grid of lights, all off
@@ -206,7 +233,7 @@ int main(int argc, char *argv[])
   // For now, solve for approximate bounding circle
   // Note that we can still do this for any simple polygons,
   // and that this is probably a reasonable restriction
-  double RADMIN = world.GetRadMin(BOXES, box_size*box_size); //RADMAX-1;
+  double RADMIN = world.GetRadMin(BOXES, box_size * box_size); //RADMAX-1;
 
   uint64_t maxsteps = 100000L;
 
