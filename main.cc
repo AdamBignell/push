@@ -114,8 +114,8 @@ int main(int argc, char *argv[])
   double timeStep = 1.0 / 30.0;
   double robot_size = 0.35;
   double box_size = 0.25;
-  Box::box_shape_t box_type = Box::SHAPE_RECT;
   Pusher::robot_shape_t robot_type = Pusher::SHAPE_RECT;
+  Box::box_shape_t box_type = Box::SHAPE_RECT;
 
   /* options descriptor */
   static struct option longopts[] = {
@@ -123,12 +123,14 @@ int main(int argc, char *argv[])
       {"boxes", required_argument, NULL, 'b'},
       {"robotsize", required_argument, NULL, 'z'},
       {"boxsize", required_argument, NULL, 's'},
+      {"robottype", required_argument, NULL, 't'},
+      {"boxtype", required_argument, NULL, 'y'},
       //  { "help",  optional_argument,   NULL,  'h' },
       {NULL, 0, NULL, 0}};
 
   int ch = 0, optindex = 0;
-  char firstChar = 'c';
-  while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y", longopts, &optindex)) != -1)
+  char firstChar;
+  while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y:", longopts, &optindex)) != -1)
   {
     switch (ch)
     {
@@ -157,19 +159,22 @@ int main(int argc, char *argv[])
       box_size = atof(optarg);
       break;
     case 't':
-      //firstChar = optarg[0];
+      firstChar = optarg[0];
       if (firstChar == 'C' || firstChar == 'c')
-        //robot_type = Pusher::SHAPE_CIRC; // TODO: This causes a segmentation fault?
-        ;
+        robot_type = Pusher::SHAPE_CIRC; // TODO: This causes a segmentation fault?
+      else if (firstChar == 'R' || firstChar == 'r')
+        robot_type = Pusher::SHAPE_RECT;
       else
         printf("unhandled robot shape %c\n", firstChar);
       break;
     case 'y':
-      //firstChar = optarg[0];
+      firstChar = optarg[0];
       if (firstChar == 'H' || firstChar == 'h')
         box_type = Box::SHAPE_HEX;
       else if (firstChar == 'C' || firstChar == 'c')
         box_type = Box::SHAPE_CIRC;
+      else if (firstChar == 'R' || firstChar == 'r')
+        box_type = Box::SHAPE_RECT;
       else
         printf("unhandled box shape %c\n", firstChar);
       break;
