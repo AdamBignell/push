@@ -234,12 +234,20 @@ int main(int argc, char *argv[])
   double radius = RADMAX;
 
   // Default is 5
-  // We shoukd set the RAD-Min intelligently
-  // For now, solve for approximate bounding circle
-  // Note that we can still do this for any simple polygons,
-  // and that this is probably a reasonable restriction
-  double RADMIN = world.GetRadMin(BOXES, box_size * box_size); //RADMAX-1;
+  // We should set the RAD-Min intelligently
+  double boxArea;
+  if (box_type == Box::SHAPE_RECT)
+    boxArea = box_size*box_size;
+  else if (box_type == Box::SHAPE_CIRC)
+    boxArea = M_PI*((box_size/2)*(box_size/2));
+  else // box_type = HEX
+  {
+    double perimeter = 6*(box_size/2);
+    double apothem = sqrt((box_size/2)*(box_size/2) - (box_size/4)*(box_size/4));
+    boxArea = (0.5)*apothem*perimeter;
+  }
 
+  double RADMIN = world.GetRadMin(BOXES, boxArea); //RADMAX-1;
   uint64_t maxsteps = 100000L;
 
   // This is the center of the contracting shape
