@@ -217,7 +217,8 @@ int main(int argc, char *argv[])
   world.AddLightGrid(sqrt(LIGHTS), sqrt(LIGHTS), 2.0, 0.0);
 
   // The thickness of the contracting pattern
-  double PATTWIDTH = (robot_size * 2);
+  // No real intelligence here, but wider bands are a little more unwieldy
+  double PATTWIDTH = (robot_size * 20); 
 
   double delta = 0.4;
   double xdelta = 0;

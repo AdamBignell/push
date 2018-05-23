@@ -106,8 +106,9 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
 
       // int on = (fabs(c2 - r2) < PATTWIDTH*PATTWIDTH);
       // We turn the light on if the light is within the specified closeness
-      // or within 1 light away if this value is smaller than the PATTWIDTH
-      int on = (fabs(c - radius) < fmin(fmin(lx,ly),PATTWIDTH));
+      // or within 1 light away if this value is greater than the PATTWIDTH
+      // fmax is maximally permissive
+      int on = (fabs(c - radius) < fmax(fmax(lx,ly),PATTWIDTH));
 
       randOn = ((double)rand() / (RAND_MAX));
       // Use 1D indexing
