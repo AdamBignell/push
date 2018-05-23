@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
   world.AddLightGrid(sqrt(LIGHTS), sqrt(LIGHTS), 2.0, 0.0);
 
   // The thickness of the contracting pattern
-  double PATTWIDTH = robot_size * 10;
+  double PATTWIDTH = (robot_size * 2);
 
   double delta = 0.4;
   double xdelta = 0;
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
           delta = -delta; //downdelta;
 
         // Turns all necessary lights on for a specific amount of contraction (radius)
-        world.UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH);
+        world.UpdateLightPattern(goalx, goaly, 0.5, radius, PATTWIDTH);
 #if 0
               for( int i=0; i<18; i+=2 )
                 {

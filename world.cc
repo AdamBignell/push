@@ -94,18 +94,24 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
   double lx = width / lside;
   double ly = height / lside;
   double r2 = radius * radius;
-  double randOn, cx, cy, c2;
+  double randOn, cx, cy, c, c2;
   for (int x = 0; x < lside; x++)
     for (int y = 0; y < lside; y++)
     {
       // (Number of lights between) * (distance between lights)
       cx = (x - goalx) * lx;
       cy = (y - goaly) * ly;
-      c2 = cx * cx + cy * cy;
+      //c2 = cx * cx + cy * cy; // Square distance
+      c = sqrt(cx * cx + cy * cy);
 
-      int on = (fabs(c2 - r2) < PATTWIDTH);
+      // int on = (fabs(c2 - r2) < PATTWIDTH*PATTWIDTH);
+      // We turn the light on if the light is within the specified closeness
+      // or within 1 light away if this value is smaller than the PATTWIDTH
+      int on = (fabs(c - radius) < fmin(fmin(lx,ly),PATTWIDTH));
+
       randOn = ((double)rand() / (RAND_MAX));
       // Use 1D indexing
+      // Note that if on == 0, we just turn the light off regardless of randOn
       SetLightIntensity(x + y * lside,
                         on * (randOn <= probOn));
       // (fabs( c2 - r2 ) < lside) ); Old version: Why is this lside?
