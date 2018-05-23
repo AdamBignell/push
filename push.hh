@@ -40,6 +40,10 @@ class Polygon
 public:
   std::vector<Vertex> vertices;
 
+  Polygon()
+  {
+  }
+  
   Polygon(std::vector<Vertex> newV);
 
   void addVertex(double x, double y);

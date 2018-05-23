@@ -123,6 +123,9 @@ int main(int argc, char *argv[])
   // This is the file holding the polygon vertices
   std::string pfileName;
 
+  // and the polygon itself
+  Polygon polygon;
+
   /* options descriptor */
   static struct option longopts[] = {
       {"robots", required_argument, NULL, 'r'},
@@ -227,6 +230,14 @@ int main(int argc, char *argv[])
 
   // Need to read the polygon from the input file
   std::ifstream infile(pfileName);
+  std::string line;
+  while (std::getline(infile, line))
+  {
+    std::istringstream vertPair(line);
+    double x, y;
+    if (!(vertPair >> x >> y)) { break; } // error
+    polygon.addVertex(x, y);
+  }
 
   // The thickness of the contracting pattern
   // No real intelligence here, but wider bands are a little more unwieldy
