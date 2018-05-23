@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 
   // The thickness of the contracting pattern
   // No real intelligence here, but wider bands are a little more unwieldy
-  double PATTWIDTH = (robot_size * 20); 
+  double PATTWIDTH = (robot_size * 2); 
 
   double delta = 0.4;
   double xdelta = 0;
