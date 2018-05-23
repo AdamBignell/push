@@ -8,6 +8,9 @@
 #include <vector>
 
 #include "push.hh"
+#include <sstream>
+#include <string>
+#include <fstream>
 
 template <class T>
 int sign(T x)
@@ -117,6 +120,9 @@ int main(int argc, char *argv[])
   Pusher::robot_shape_t robot_type = Pusher::SHAPE_RECT;
   Box::box_shape_t box_type = Box::SHAPE_RECT;
 
+  // This is the file holding the polygon vertices
+  std::string pfileName;
+
   /* options descriptor */
   static struct option longopts[] = {
       {"robots", required_argument, NULL, 'r'},
@@ -130,7 +136,7 @@ int main(int argc, char *argv[])
 
   int ch = 0, optindex = 0;
   char firstChar;
-  while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y:", longopts, &optindex)) != -1)
+  while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y:p:", longopts, &optindex)) != -1)
   {
     switch (ch)
     {
@@ -178,6 +184,9 @@ int main(int argc, char *argv[])
       else
         printf("unhandled box shape %c\n", firstChar);
       break;
+    case 'p':
+      pfileName = optarg;
+      break;
       // case 'h':
       // case '?':
       //   puts( USAGE );
@@ -215,6 +224,9 @@ int main(int argc, char *argv[])
   // fill the world with a grid of lights, all off
   // (width, height, height above arena, brightness)
   world.AddLightGrid(sqrt(LIGHTS), sqrt(LIGHTS), 2.0, 0.0);
+
+  // Need to read the polygon from the input file
+  std::ifstream infile(pfileName);
 
   // The thickness of the contracting pattern
   // No real intelligence here, but wider bands are a little more unwieldy

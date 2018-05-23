@@ -25,6 +25,29 @@ public:
   }
 };
 
+class Vertex
+{
+public:
+  double x, y;
+
+  Vertex(double x, double y) : x(x), y(y)
+  {
+  }
+};
+
+class Polygon
+{
+public:
+  std::vector<Vertex> vertices;
+
+  Polygon(std::vector<Vertex> newV);
+
+  void addVertex(double x, double y);
+  void translate(double dx, double dy);
+  void scale(double s, double cx, double cy);
+  void scale(double d);
+};
+
 class Robot;
 class Box;
 
