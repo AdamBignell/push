@@ -239,6 +239,12 @@ int main(int argc, char *argv[])
     polygon.addVertex(x, y);
   }
 
+  if (polygon.vertices.size() < 3)
+  {
+    printf("The input file was invalid or did not define a polygon\n.");
+    exit(0);
+  }
+
   // The thickness of the contracting pattern
   // No real intelligence here, but wider bands are a little more unwieldy
   double PATTWIDTH = (robot_size * 2); 

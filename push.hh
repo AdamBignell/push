@@ -50,6 +50,7 @@ public:
   void translate(double dx, double dy);
   void scale(double s, double cx, double cy);
   void scale(double d);
+  double getArea();
 };
 
 class Robot;

@@ -39,3 +39,16 @@ void Polygon::scale(double s)
         vertex.y *= s;
     }
 }
+
+double Polygon::getArea()
+{
+    double area = 0;
+    int i;
+    for (i = 0; i < vertices.size()-1; ++i)
+    {
+        // Shoelace formula
+        area += vertices[i].x * vertices[i+1].y - vertices[i+1].x * vertices[i].y; 
+    }
+    area += vertices[i].x * vertices[0].y - vertices[0].x * vertices[i].y;
+    return fabs(area) / 2.0f; 
+}
