@@ -51,6 +51,10 @@ public:
   void scale(double s, double cx, double cy);
   void scale(double d);
   double getArea();
+
+  // Calculates shortest distance from point
+  // to line connecting vertices
+  double getDistFromPoint(double x, double y);
 };
 
 class Robot;

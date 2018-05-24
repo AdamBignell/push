@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
   Box::box_shape_t box_type = Box::SHAPE_RECT;
 
   // This is the file holding the polygon vertices
-  std::string pfileName;
+  std::string pfileName = "";
 
   // and the polygon itself
   Polygon polygon;
@@ -239,11 +239,14 @@ int main(int argc, char *argv[])
     polygon.addVertex(x, y);
   }
 
-  if (polygon.vertices.size() < 3)
+  if (polygon.vertices.size() < 3 && pfileName != "")
   {
     printf("The input file was invalid or did not define a polygon\n.");
     exit(0);
   }
+
+  // Move the polygon into the arena's coordinate system, with (0,0) in the bottom left
+  polygon.translate(WIDTH/2.0, HEIGHT/2.0);
 
   // The thickness of the contracting pattern
   // No real intelligence here, but wider bands are a little more unwieldy
