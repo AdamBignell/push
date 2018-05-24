@@ -2,15 +2,18 @@
 Use expanding and contracting lightfields to direct/recharge robots and move boxes into a 2D shape.
 
 ## Installation
-```cd push```
+```
+cd push
+make
+```
 
-``` make```
-
-You may need to change your Makefile to export your Box2D installation to your CPATH. See the line:
+You will need to edit your Makefile to export your Box2D installation to your CPATH. See the line:
 
 ```export CPATH=/home/adam/Documents/packages/Box2D_v2.3.0/Box2D```
 
-I had to build an older version of Box2D (namely 2.3.0) to circumvent the frustrating new build methods.
+I had to build an older version of Box2D (namely 2.3.0) to circumvent the frustrating new (as of May 2018) Box2D build methods.
+
+If you are not running Linux, you can un-comment out the earlier section for MacOS.
 
 ## Running Push
 
