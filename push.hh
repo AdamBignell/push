@@ -70,6 +70,8 @@ public:
   b2Body *boxWall[4];
   b2Body *robotWall[4];
 
+  Polygon polygon;
+
   size_t steps;
   std::vector<Light *> lights;
   std::vector<Box *> boxes;

@@ -70,7 +70,7 @@ double Polygon::getDistFromPoint(double x, double y)
     for (int i = 0; i < vertices.size(); ++i)
     {
         // This accounts for the fact that we want i+1 = 0 at the last i
-        iplus1 = i+1 % vertices.size();
+        iplus1 = (i+1) % vertices.size();
         x1 = vertices[i].x;
         y1 = vertices[i].y;
         x2 = vertices[iplus1].x;
@@ -88,15 +88,15 @@ double Polygon::getDistFromPoint(double x, double y)
         if (lenSq != 0)
             check = dot / lenSq;
 
-        if (check < 0) {
+        if (check < 0) { // Closest to first point
             xx = x1;
             yy = y1;
         }
-        else if (check > 1) {
-            xx = vertices[iplus1].x;
+        else if (check > 1) { // Closest to seconds
+            xx = x2;
             yy = y2;
         }
-        else {
+        else { // Closest to segment on the line
             xx = x1 + check * C;
             yy = y1 + check * D;
         }

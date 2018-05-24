@@ -123,9 +123,6 @@ int main(int argc, char *argv[])
   // This is the file holding the polygon vertices
   std::string pfileName = "";
 
-  // and the polygon itself
-  Polygon polygon;
-
   /* options descriptor */
   static struct option longopts[] = {
       {"robots", required_argument, NULL, 'r'},
@@ -236,17 +233,17 @@ int main(int argc, char *argv[])
     std::istringstream vertPair(line);
     double x, y;
     if (!(vertPair >> x >> y)) { break; } // error
-    polygon.addVertex(x, y);
+    world.polygon.addVertex(x, y);
   }
 
-  if (polygon.vertices.size() < 3 && pfileName != "")
+  if (world.polygon.vertices.size() < 3 && pfileName != "")
   {
     printf("The input file was invalid or did not define a polygon\n.");
     exit(0);
   }
 
   // Move the polygon into the arena's coordinate system, with (0,0) in the bottom left
-  polygon.translate(WIDTH/2.0, HEIGHT/2.0);
+  world.polygon.translate(WIDTH/2.0, HEIGHT/2.0);
 
   // The thickness of the contracting pattern
   // No real intelligence here, but wider bands are a little more unwieldy
@@ -298,6 +295,8 @@ int main(int argc, char *argv[])
   int holdFor = 0;
 
   /* Loop until the user closes the window */
+  // Note that for irregular polygons we define the radius as the shortest distance
+  // to any point on the polygon
   while (!world.RequestShutdown() && world.steps < maxsteps)
   {
     if (world.steps % 100 == 1) // every now and again
@@ -324,7 +323,8 @@ int main(int argc, char *argv[])
           delta = -delta; //downdelta;
 
         // Turns all necessary lights on for a specific amount of contraction (radius)
-        world.UpdateLightPattern(goalx, goaly, 0.5, radius, PATTWIDTH);
+        // The polygon will automatically be used if it is well defined
+        world.UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH);
 #if 0
               for( int i=0; i<18; i+=2 )
                 {

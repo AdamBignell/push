@@ -98,17 +98,27 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
   for (int x = 0; x < lside; x++)
     for (int y = 0; y < lside; y++)
     {
-      // (Number of lights between) * (distance between lights)
-      cx = (x - goalx) * lx;
-      cy = (y - goaly) * ly;
-      //c2 = cx * cx + cy * cy; // Square distance
-      c = sqrt(cx * cx + cy * cy);
+      int on = 0;
+      if (polygon.vertices.size() > 2) // Use the polygon
+      {
+        on = (fabs(polygon.getDistFromPoint(x, y) < fmax(fmax(lx,ly),PATTWIDTH)));
+      }
+      else // Use the circle
+      {
+        // (Number of lights between) * (distance between lights)
+        cx = (x - goalx) * lx;
+        cy = (y - goaly) * ly;
 
-      // int on = (fabs(c2 - r2) < PATTWIDTH*PATTWIDTH);
-      // We turn the light on if the light is within the specified closeness
-      // or within 1 light away if this value is greater than the PATTWIDTH
-      // fmax is maximally permissive
-      int on = (fabs(c - radius) < fmax(fmax(lx,ly),PATTWIDTH));
+        c = sqrt(cx * cx + cy * cy);
+
+        //c2 = cx * cx + cy * cy; // Square distance
+        // int on = (fabs(c2 - r2) < PATTWIDTH*PATTWIDTH);
+
+        // We turn the light on if the light is within the specified closeness
+        // or within 1 light away if this value is greater than the PATTWIDTH
+
+        on = (fabs(c - radius) < fmax(fmax(lx,ly),PATTWIDTH));
+      }
 
       randOn = ((double)rand() / (RAND_MAX));
       // Use 1D indexing
