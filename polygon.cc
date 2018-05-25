@@ -40,8 +40,8 @@ void Polygon::scale(double s, double newCx, double newCy)
 {
     for (auto &vertex : vertices)
     {
-        vertex.x = (vertex.x - cx)*s + cx;
-        vertex.y = (vertex.y - cy)*s + cy;
+        vertex.x = (vertex.x - newCx)*s + newCx;
+        vertex.y = (vertex.y - newCy)*s + newCy;
     }
 }
 
@@ -50,8 +50,8 @@ void Polygon::scale(double s)
 {
     for (auto &vertex : vertices)
     {
-        vertex.x *= (vertex.x - cx)*s + cx;
-        vertex.y *= (vertex.y - cy)*s + cy;
+        vertex.x = (vertex.x - cx)*s + cx;
+        vertex.y = (vertex.y - cy)*s + cy;
     }
 }
 

@@ -246,13 +246,14 @@ int main(int argc, char *argv[])
   world.havePolygon = true;
 
   // Move the polygon into the arena's coordinate system, with (0,0) in the bottom left
-  world.polygon.translate(WIDTH/2.0, HEIGHT/2.0, true);
+  world.polygon.translate((WIDTH-1)/2.0, (HEIGHT-1)/2.0, true);
 
   // The thickness of the contracting pattern
   // No real intelligence here, but wider bands are a little more unwieldy
   double PATTWIDTH = (robot_size * 2); 
 
   double delta = 0.4;
+  double sdelta = 0.9;
   double xdelta = 0;
   double ydelta = 0;
 
@@ -287,8 +288,8 @@ int main(int argc, char *argv[])
 
 
   // We need to adjust the user polygon to fit the arena
-  world.polygon.scale(RADMAX / world.polygon.getDistFromPoint(goalx, goaly), goalx, goaly);
-  double RADMIN = world.GetRadMin(BOXES, boxArea); //RADMAX-1;
+  world.polygon.scale(RADMAX / world.polygon.getDistFromPoint(goalx, goaly));
+  double RADMIN = world.GetRadMin(BOXES, boxArea, world.polygon); //RADMAX-1;
 
   // Lets us fully contract once and then alter the control strategy
   // The first contraction collects robots, the rest perform smoothing
@@ -312,13 +313,24 @@ int main(int argc, char *argv[])
         holdFor--;
         world.UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH);
         if (holdFor == 0)
-          radius += delta;
+        {
+          if (world.havePolygon)
+          {
+            world.polygon.scale(sdelta);
+            while(radius < RADMIN)
+              radius *= sdelta; // Get us above the threshold to grow
+          }
+          else
+            radius += delta;
+        }
       }
       else
       {
         if (radius < RADMIN)
         {
           delta = -delta; // * 2.0;
+          sdelta = 2-sdelta;
+
           //xdelta = 0.1;
           if (holdAtMin)
             holdFor = 10;
@@ -326,7 +338,10 @@ int main(int argc, char *argv[])
         }
 
         else if (radius > RADMAX)
+        {
           delta = -delta; //downdelta;
+          sdelta = 2-sdelta;
+        }
 
         // Turns all necessary lights on for a specific amount of contraction (radius)
         // The polygon will automatically be used if it is well defined
@@ -339,10 +354,17 @@ int main(int argc, char *argv[])
                 }
 #endif
 
-        // See above checks with RADMIN and RADMAX
-        // This handles both contracts and dilation
-        if (holdFor == 0)
-          radius += delta;
+        // This handles both contractions and dilation
+        if (holdFor == 0) // If we aren't staying contracted
+        {
+          if (world.havePolygon)
+          {
+            world.polygon.scale(sdelta);
+            radius *= sdelta;
+          }
+          else
+            radius += delta;
+        }
 
         // Optionally move the collected resources
         // goalx += xdelta;

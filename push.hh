@@ -112,7 +112,7 @@ public:
 
   // Get the minimum contracted size
   // Use total box area to estimate
-  virtual double GetRadMin(double numBoxes, double boxSize);
+  double GetRadMin(double numBoxes, double boxSize, Polygon tempPoly);
 };
 
 class GuiWorld : public World

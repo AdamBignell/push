@@ -211,18 +211,22 @@ void World::Step(double timestep)
 
 // Get the minimum contracted size
 // Use total box area to estimate
-double World::GetRadMin(double numBoxes, double boxArea)
+double World::GetRadMin(double numBoxes, double boxArea, Polygon tempPoly)
 {
   double totalBoxArea = numBoxes * boxArea;
   if (havePolygon)
   {
     // Don't do `auto &vertex`, we don't want to retain these values
-    //area = world.polygon.getArea();
-    // while (area > totalBoxArea)
-    // {
-    //   polygon.scale()
-    // }
+    double area = tempPoly.getArea();
+    while (area > totalBoxArea) // Can we do this loop algebraically?
+    {
+      tempPoly.scale(0.9);
+      area = tempPoly.getArea();
+    }
+    return tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
   }
+
+  //Circle case
   double radMin = sqrt(totalBoxArea / M_PI);
   return radMin;
 }
