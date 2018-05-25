@@ -1,8 +1,16 @@
 #include "push.hh"
 #include <limits>
 
-Polygon::Polygon(std::vector<Vertex> newV)
+Polygon::Polygon(double newCx, double newCy)
 {
+    cx = newCx;
+    cy = newCy;
+}
+
+Polygon::Polygon(std::vector<Vertex> newV, double newCx, double newCy)
+{
+    cx = newCx;
+    cy = newCy;
     auto it = std::next(newV.begin(), newV.size());
     std::move(newV.begin(), it, std::back_inserter(vertices));
 }
@@ -13,31 +21,37 @@ void Polygon::addVertex(double x, double y)
     vertices.push_back(point);
 }
 
-void Polygon::translate(double dx, double dy)
+void Polygon::translate(double dx, double dy, bool recenter)
 {
     for (auto &vertex : vertices)
     {
         vertex.x += dx;
         vertex.y += dy;
     }
+    if (recenter)
+    {
+        cx += dx;
+        cy += dy;
+    }
 }
 
 // [s]cale, (cx,cy) center we scale with respect to
-void Polygon::scale(double s, double cx, double cy)
+void Polygon::scale(double s, double newCx, double newCy)
 {
     for (auto &vertex : vertices)
     {
         vertex.x = (vertex.x - cx)*s + cx;
-        vertex.y = (vertex.y - cy)*s+ cy;
+        vertex.y = (vertex.y - cy)*s + cy;
     }
 }
 
+// Default to user center
 void Polygon::scale(double s)
 {
     for (auto &vertex : vertices)
     {
-        vertex.x *= s;
-        vertex.y *= s;
+        vertex.x *= (vertex.x - cx)*s + cx;
+        vertex.y *= (vertex.y - cy)*s + cy;
     }
 }
 
@@ -52,6 +66,12 @@ double Polygon::getArea()
     }
     area += vertices[i].x * vertices[0].y - vertices[0].x * vertices[i].y;
     return fabs(area) / 2.0f; 
+}
+
+void Polygon::recenter(double newCx, double newCy)
+{
+    cx = newCx;
+    cy = newCy;
 }
 
 // x,y is the point

@@ -213,11 +213,16 @@ void World::Step(double timestep)
 // Use total box area to estimate
 double World::GetRadMin(double numBoxes, double boxArea)
 {
-  double totalArea = numBoxes * boxArea;
-  // if (havePolygon)
-  // {
-
-  // }
-  double radMin = sqrt(totalArea / M_PI);
+  double totalBoxArea = numBoxes * boxArea;
+  if (havePolygon)
+  {
+    // Don't do `auto &vertex`, we don't want to retain these values
+    //area = world.polygon.getArea();
+    // while (area > totalBoxArea)
+    // {
+    //   polygon.scale()
+    // }
+  }
+  double radMin = sqrt(totalBoxArea / M_PI);
   return radMin;
 }

@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
   world.havePolygon = true;
 
   // Move the polygon into the arena's coordinate system, with (0,0) in the bottom left
-  world.polygon.translate(WIDTH/2.0, HEIGHT/2.0);
+  world.polygon.translate(WIDTH/2.0, HEIGHT/2.0, true);
 
   // The thickness of the contracting pattern
   // No real intelligence here, but wider bands are a little more unwieldy
@@ -279,7 +279,6 @@ int main(int argc, char *argv[])
     boxArea = (0.5)*apothem*perimeter;
   }
 
-  double RADMIN = world.GetRadMin(BOXES, boxArea); //RADMAX-1;
   uint64_t maxsteps = 100000L;
 
   // This is the center of the contracting shape
@@ -289,6 +288,7 @@ int main(int argc, char *argv[])
 
   // We need to adjust the user polygon to fit the arena
   world.polygon.scale(RADMAX / world.polygon.getDistFromPoint(goalx, goaly), goalx, goaly);
+  double RADMIN = world.GetRadMin(BOXES, boxArea); //RADMAX-1;
 
   // Lets us fully contract once and then alter the control strategy
   // The first contraction collects robots, the rest perform smoothing

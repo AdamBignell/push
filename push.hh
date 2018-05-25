@@ -40,17 +40,24 @@ class Polygon
 public:
   std::vector<Vertex> vertices;
 
+  double cx, cy; // center
+
   Polygon()
   {
+    cx = 0;
+    cy = 0;
   }
+
+  Polygon(double cx, double cy);
   
-  Polygon(std::vector<Vertex> newV);
+  Polygon(std::vector<Vertex> newV, double cx, double cy);
 
   void addVertex(double x, double y);
-  void translate(double dx, double dy);
+  void translate(double dx, double dy, bool recenter);
   void scale(double s, double cx, double cy);
   void scale(double d);
   double getArea();
+  void recenter(double cx, double cy);
 
   // Calculates shortest distance from point
   // to line connecting vertices
