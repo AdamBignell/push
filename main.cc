@@ -248,10 +248,6 @@ int main(int argc, char *argv[])
   // Move the polygon into the arena's coordinate system, with (0,0) in the bottom left
   world.polygon.translate((WIDTH-1)/2.0, (HEIGHT-1)/2.0, true);
 
-  // The thickness of the contracting pattern
-  // No real intelligence here, but wider bands are a little more unwieldy
-  double PATTWIDTH = (robot_size * 2); 
-
   double delta = 0.4;
   double sdelta = 0.9;
   double xdelta = 0;
@@ -261,9 +257,13 @@ int main(int argc, char *argv[])
   double lx = WIDTH / lside; // distance between lights
   double ly = HEIGHT / lside;
 
+  // The thickness of the contracting pattern
+  // No real intelligence here, but wider bands are a little more unwieldy
+  double PATTWIDTH = robot_size; 
+
   // Note that we don't want the center of the
   // ring perimeter to actually hit the wall.
-  double RADMAX = (WIDTH / 2.0);
+  double RADMAX = (WIDTH / 2.0) - 2;
   double radius = RADMAX;
 
   // Default is 5
@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
   // to any point on the polygon
   while (!world.RequestShutdown() && world.steps < maxsteps)
   {
-    if (world.steps % 100 == 1) // every now and again
+    if (world.steps % 200 == 1) // every now and again
     {
       if (holdFor != 0 && holdAtMin)
       {
@@ -333,7 +333,7 @@ int main(int argc, char *argv[])
 
           //xdelta = 0.1;
           if (holdAtMin)
-            holdFor = 10;
+            holdFor = 5; // No empirical reason for 5 specifically
           continue;
         }
 
@@ -343,9 +343,13 @@ int main(int argc, char *argv[])
           sdelta = 2-sdelta;
         }
 
-        // Turns all necessary lights on for a specific amount of contraction (radius)
-        // The polygon will automatically be used if it is well defined
-        world.UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH);
+        // This shouldn't be an else despite the above
+        if (radius <= RADMAX)
+        {
+          // Turns all necessary lights on for a specific amount of contraction (radius)
+          // The polygon will automatically be used if it is well defined
+          world.UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH);
+        }
 #if 0
               for( int i=0; i<18; i+=2 )
                 {
