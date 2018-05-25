@@ -57,7 +57,11 @@ public:
   void scale(double s, double cx, double cy);
   void scale(double d);
   double getArea();
-  void recenter(double cx, double cy);
+  double getSignedArea();
+
+  // Just sets the point that scaling is done with respect to
+  void setOrigin(double cx, double cy);
+  Vertex getCentroid();
 
   // Calculates shortest distance from point
   // to line connecting vertices

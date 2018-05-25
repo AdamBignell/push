@@ -68,10 +68,52 @@ double Polygon::getArea()
     return fabs(area) / 2.0f; 
 }
 
-void Polygon::recenter(double newCx, double newCy)
+// Used in centroid calculation
+double Polygon::getSignedArea()
+{
+    double area = 0;
+    int i;
+    for (i = 0; i < vertices.size()-1; ++i)
+    {
+        // Shoelace formula
+        area += vertices[i].x * vertices[i+1].y - vertices[i+1].x * vertices[i].y; 
+    }
+    area += vertices[i].x * vertices[0].y - vertices[0].x * vertices[i].y;
+    return area / 2.0f; 
+}
+
+void Polygon::setOrigin(double newCx, double newCy)
 {
     cx = newCx;
     cy = newCy;
+}
+
+Vertex Polygon::getCentroid()
+{
+    double A = getSignedArea();
+
+    double Cx = 0;
+    double Cy = 0;
+
+    // Calculate x of centroid
+    int i, j;
+    for (i = 0; i < vertices.size()-1; ++i)
+    {
+        Cx += (vertices[i].x + vertices[i+1].x) * (vertices[i].x*vertices[i+1].y - vertices[i+1].x*vertices[i].y);
+    }
+    Cx += (vertices[i].x + vertices[0].x) * (vertices[i].x*vertices[0].y - vertices[0].x*vertices[i].y);
+    Cx /= (6*A);
+
+    // Calculate y of centroid
+    for (j = 0; j < vertices.size()-1; ++j)
+    {
+        Cy += (vertices[j].y + vertices[j+1].y) * (vertices[j].x*vertices[j+1].y - vertices[j+1].x*vertices[j].y);
+    }
+    Cy += (vertices[j].y + vertices[0].y) * (vertices[j].x*vertices[0].y - vertices[0].x*vertices[j].y);
+    Cy /= (6*A);
+
+    Vertex centroid(Cx, Cy);
+    return centroid;
 }
 
 // x,y is the point

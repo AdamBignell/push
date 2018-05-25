@@ -19,6 +19,18 @@ int sign(T x)
 }
 
 double letterL[] = {10, 6, 10, 7, 10, 8, 10, 9, 10, 10, 11, 10, 12, 10, 13, 10, 14, 10};
+
+// Utilities here
+// If there are more than a few functions here
+// Break out into a separate file
+double dist(double x1, double y1, double x2, double y2)
+{
+  return sqrt((x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1));
+}
+
+
+//
+
 class Pusher : public Robot
 {
 private:
@@ -244,6 +256,11 @@ int main(int argc, char *argv[])
 
   // Used throughout to detect if we are in the circle or poly case
   world.havePolygon = true;
+
+  // These lines translate the polygon such that its 
+  // centroid is at the origin (0,0)
+  Vertex centroid = world.polygon.getCentroid();
+  world.polygon.translate(-1*centroid.x, -1*centroid.y, false);
 
   // Move the polygon into the arena's coordinate system, with (0,0) in the bottom left
   world.polygon.translate((WIDTH-1)/2.0, (HEIGHT-1)/2.0, true);
