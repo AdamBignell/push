@@ -7,6 +7,8 @@ World::World(double width, double height, double numLights) : steps(0),
                                                               b2world(new b2World(b2Vec2(0, 0))), // gravity
                                                               lights()                            //empty vector
 {
+  havePolygon = false;
+  
   //set interior box container
   b2BodyDef boxWallDef;
   b2PolygonShape groundBox;
@@ -99,7 +101,7 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
     for (int y = 0; y < lside; y++)
     {
       int on = 0;
-      if (polygon.vertices.size() > 2) // Use the polygon
+      if (havePolygon) // Use the polygon
       {
         on = (fabs(polygon.getDistFromPoint(x, y) < fmax(fmax(lx,ly),PATTWIDTH)));
       }
@@ -212,6 +214,10 @@ void World::Step(double timestep)
 double World::GetRadMin(double numBoxes, double boxArea)
 {
   double totalArea = numBoxes * boxArea;
+  // if (havePolygon)
+  // {
+
+  // }
   double radMin = sqrt(totalArea / M_PI);
   return radMin;
 }

@@ -72,6 +72,8 @@ public:
 
   Polygon polygon;
 
+  bool havePolygon;
+
   size_t steps;
   std::vector<Light *> lights;
   std::vector<Box *> boxes;

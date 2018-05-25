@@ -242,6 +242,9 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
+  // Used throughout to detect if we are in the circle or poly case
+  world.havePolygon = true;
+
   // Move the polygon into the arena's coordinate system, with (0,0) in the bottom left
   world.polygon.translate(WIDTH/2.0, HEIGHT/2.0);
 
@@ -259,7 +262,6 @@ int main(int argc, char *argv[])
 
   // Note that we don't want the center of the
   // ring perimeter to actually hit the wall.
-  // We only need the gradient to
   double RADMAX = (WIDTH / 2.0);
   double radius = RADMAX;
 
@@ -283,6 +285,10 @@ int main(int argc, char *argv[])
   // This is the center of the contracting shape
   double goalx = WIDTH / 2.0;
   double goaly = HEIGHT / 2.0;
+
+
+  // We need to adjust the user polygon to fit the arena
+  world.polygon.scale(RADMAX / world.polygon.getDistFromPoint(goalx, goaly), goalx, goaly);
 
   // Lets us fully contract once and then alter the control strategy
   // The first contraction collects robots, the rest perform smoothing

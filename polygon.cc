@@ -25,7 +25,7 @@ void Polygon::translate(double dx, double dy)
 // [s]cale, (cx,cy) center we scale with respect to
 void Polygon::scale(double s, double cx, double cy)
 {
-    for (auto vertex : vertices)
+    for (auto &vertex : vertices)
     {
         vertex.x = (vertex.x - cx)*s + cx;
         vertex.y = (vertex.y - cy)*s+ cy;
@@ -34,7 +34,7 @@ void Polygon::scale(double s, double cx, double cy)
 
 void Polygon::scale(double s)
 {
-    for (auto vertex : vertices)
+    for (auto &vertex : vertices)
     {
         vertex.x *= s;
         vertex.y *= s;
