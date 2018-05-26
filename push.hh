@@ -66,6 +66,9 @@ public:
   // Calculates shortest distance from point
   // to line connecting vertices
   double getDistFromPoint(double x, double y);
+
+  // The average distance between vertices from a point
+  double getAvgDistFromPoint(double x, double y);
 };
 
 class Robot;
@@ -116,7 +119,10 @@ public:
 
   // Get the minimum contracted size
   // Use total box area to estimate
-  double GetRadMin(double numBoxes, double boxSize, Polygon tempPoly);
+  double GetRadMin(double numBoxes, double boxArea, Polygon tempPoly);
+
+  // Match arena Size
+  double GetRadMax(Polygon& tempPoly);
 };
 
 class GuiWorld : public World

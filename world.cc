@@ -213,20 +213,40 @@ void World::Step(double timestep)
 // Use total box area to estimate
 double World::GetRadMin(double numBoxes, double boxArea, Polygon tempPoly)
 {
+  //TODO: This still feels buggy for user-defined polygons
   double totalBoxArea = numBoxes * boxArea;
   if (havePolygon)
   {
-    // Don't do `auto &vertex`, we don't want to retain these values
     double area = tempPoly.getArea();
     while (area > totalBoxArea) // Can we do this loop algebraically?
     {
-      tempPoly.scale(0.9);
+      tempPoly.scale(0.95);
       area = tempPoly.getArea();
     }
+    tempPoly.scale(1.05);
     return tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
   }
 
   //Circle case
   double radMin = sqrt(totalBoxArea / M_PI);
   return radMin;
+}
+
+double World::GetRadMax(Polygon& tempPoly){
+  //TODO: This still feels buggy for user-defined polygons
+  if (havePolygon)
+  {
+    double arenaArea = width*height;
+    double area = tempPoly.getArea();
+    while (area < arenaArea) // Can we do this loop algebraically?
+    {
+      tempPoly.scale(1.05);
+      area = tempPoly.getArea();
+    }
+    return tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
+  }
+
+  //Circle case
+  double radMax = sqrt(width*height / M_PI);
+  return radMax;
 }

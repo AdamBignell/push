@@ -28,9 +28,6 @@ double dist(double x1, double y1, double x2, double y2)
   return sqrt((x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1));
 }
 
-
-//
-
 class Pusher : public Robot
 {
 private:
@@ -253,17 +250,23 @@ int main(int argc, char *argv[])
     printf("The input file was invalid or did not define a polygon\n.");
     exit(0);
   }
-
-  // Used throughout to detect if we are in the circle or poly case
-  world.havePolygon = true;
+  
+  if (world.polygon.vertices.size() > 2)
+  {
+    // Used throughout to detect if we are in the circle or poly case
+    world.havePolygon = true;
+  }
 
   // These lines translate the polygon such that its 
   // centroid is at the origin (0,0)
-  Vertex centroid = world.polygon.getCentroid();
-  world.polygon.translate(-1*centroid.x, -1*centroid.y, false);
+  if (world.havePolygon)
+  {
+    Vertex centroid = world.polygon.getCentroid();
+    world.polygon.translate(-1*centroid.x, -1*centroid.y, false);
 
-  // Move the polygon into the arena's coordinate system, with (0,0) in the bottom left
-  world.polygon.translate((WIDTH-1)/2.0, (HEIGHT-1)/2.0, true);
+    // Move the polygon into the arena's coordinate system, with (0,0) in the bottom left
+    world.polygon.translate((WIDTH-1)/2.0, (HEIGHT-1)/2.0, true);
+  }
 
   double delta = 0.4;
   double sdelta = 0.9;
@@ -281,7 +284,6 @@ int main(int argc, char *argv[])
   // Note that we don't want the center of the
   // ring perimeter to actually hit the wall.
   double RADMAX = (WIDTH / 2.0) - 2;
-  double radius = RADMAX;
 
   // Default is 5
   // We should set the RAD-Min intelligently
@@ -303,16 +305,19 @@ int main(int argc, char *argv[])
   double goalx = WIDTH / 2.0;
   double goaly = HEIGHT / 2.0;
 
-
   // We need to adjust the user polygon to fit the arena
-  world.polygon.scale(RADMAX / world.polygon.getDistFromPoint(goalx, goaly));
-  double RADMIN = world.GetRadMin(BOXES, boxArea, world.polygon); //RADMAX-1;
+  // Preliminary set-up
+  double radius = RADMAX;
+  if (world.havePolygon)
+  {
+    world.polygon.scale(RADMAX / world.polygon.getAvgDistFromPoint(goalx, goaly));
+    radius = world.polygon.getDistFromPoint(goalx, goaly);
+    RADMAX = world.GetRadMax(world.polygon);
+  }
 
-  // Lets us fully contract once and then alter the control strategy
-  // The first contraction collects robots, the rest perform smoothing
-  // bool firstContraction = true;
+  double RADMIN = world.GetRadMin(BOXES, boxArea, world.polygon); 
 
-  // Can stop this behaviour by setting this to false
+  // Can stop the holding behaviour by setting this to false
   bool holdAtMin = true;
 
   // Initialization

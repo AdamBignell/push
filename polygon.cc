@@ -173,3 +173,13 @@ double Polygon::getDistFromPoint(double x, double y)
     }
     return minDistance;
 }
+
+double Polygon::getAvgDistFromPoint(double x, double y)
+{
+    double totalDist = 0;
+    for (auto &vertex : vertices)
+    {
+        totalDist += sqrt((vertex.x - x)*(vertex.x - x) + (vertex.y - y)*(vertex.y - y));
+    }
+    return totalDist/vertices.size();
+}
