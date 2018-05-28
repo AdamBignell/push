@@ -103,7 +103,7 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
       int on = 0;
       if (havePolygon) // Use the polygon
       {
-        on = (fabs(polygon.getDistFromPoint(x, y) < fmax(fmax(lx,ly),PATTWIDTH)));
+        on = (fabs(polygon.getDistFromPoint(x, y) < fmax(fmax(lx,ly)/2,PATTWIDTH)));
       }
       else // Use the circle
       {
@@ -211,7 +211,7 @@ void World::Step(double timestep)
 
 // Get the minimum contracted size
 // Use total box area to estimate
-double World::GetRadMin(double numBoxes, double boxArea, Polygon tempPoly)
+double World::GetRadMin(double numBoxes, double boxArea, double robot_size, Polygon tempPoly)
 {
   //TODO: This still feels buggy for user-defined polygons
   double totalBoxArea = numBoxes * boxArea;
@@ -223,16 +223,16 @@ double World::GetRadMin(double numBoxes, double boxArea, Polygon tempPoly)
       tempPoly.scale(0.95);
       area = tempPoly.getArea();
     }
-    tempPoly.scale(1.05);
+    tempPoly.scale(1.10);
     return tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
   }
 
   //Circle case
-  double radMin = sqrt(totalBoxArea / M_PI);
+  double radMin = sqrt(totalBoxArea / M_PI) + robot_size; // Need literal wiggle room
   return radMin;
 }
 
-double World::GetRadMax(Polygon& tempPoly){
+double World::GetSetRadMax(Polygon& tempPoly){
   //TODO: This still feels buggy for user-defined polygons
   if (havePolygon)
   {

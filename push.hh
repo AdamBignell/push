@@ -67,7 +67,7 @@ public:
   // to line connecting vertices
   double getDistFromPoint(double x, double y);
 
-  // The average distance between vertices from a point
+  // The average distance between the vertices and a point
   double getAvgDistFromPoint(double x, double y);
 };
 
@@ -119,10 +119,11 @@ public:
 
   // Get the minimum contracted size
   // Use total box area to estimate
-  double GetRadMin(double numBoxes, double boxArea, Polygon tempPoly);
+  double GetRadMin(double numBoxes, double boxArea, double robot_size, Polygon tempPoly);
 
-  // Match arena Size
-  double GetRadMax(Polygon& tempPoly);
+  // Approximately Match arena Size,
+  // and actually set the polgyon to this size
+  double GetSetRadMax(Polygon& tempPoly);
 };
 
 class GuiWorld : public World

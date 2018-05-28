@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
   }
 
   double delta = 0.4;
-  double sdelta = 0.9;
+  double sdelta = 0.95;
   double xdelta = 0;
   double ydelta = 0;
 
@@ -279,11 +279,11 @@ int main(int argc, char *argv[])
 
   // The thickness of the contracting pattern
   // No real intelligence here, but wider bands are a little more unwieldy
-  double PATTWIDTH = robot_size; 
+  double PATTWIDTH = fmax(lx,ly)/2; 
 
   // Note that we don't want the center of the
   // ring perimeter to actually hit the wall.
-  double RADMAX = (WIDTH / 2.0) - 2;
+  double RADMAX = (WIDTH / 2.0);
 
   // Default is 5
   // We should set the RAD-Min intelligently
@@ -306,16 +306,18 @@ int main(int argc, char *argv[])
   double goaly = HEIGHT / 2.0;
 
   // We need to adjust the user polygon to fit the arena
-  // Preliminary set-up
+  // I'm a little uncomfortable switching from dilating to
+  // contracting using radius. It's more 
+  // intuitive to use area directly, but doing so would require
+  // many more calculations. Keep in mind there are alternatives.
   double radius = RADMAX;
   if (world.havePolygon)
   {
-    world.polygon.scale(RADMAX / world.polygon.getAvgDistFromPoint(goalx, goaly));
+    RADMAX = world.GetSetRadMax(world.polygon);
     radius = world.polygon.getDistFromPoint(goalx, goaly);
-    RADMAX = world.GetRadMax(world.polygon);
   }
 
-  double RADMIN = world.GetRadMin(BOXES, boxArea, world.polygon); 
+  double RADMIN = world.GetRadMin(BOXES, boxArea, robot_size, world.polygon); 
 
   // Can stop the holding behaviour by setting this to false
   bool holdAtMin = true;
@@ -323,12 +325,16 @@ int main(int argc, char *argv[])
   // Initialization
   int holdFor = 0;
 
+  int contractRate = 100;
+  if (world.havePolygon)
+    contractRate = 200;
+
   /* Loop until the user closes the window */
   // Note that for irregular polygons we define the radius as the shortest distance
   // to any point on the polygon
   while (!world.RequestShutdown() && world.steps < maxsteps)
   {
-    if (world.steps % 200 == 1) // every now and again
+    if (world.steps % contractRate == 1) // every now and againPATTWIDTH
     {
       if (holdFor != 0 && holdAtMin)
       {
