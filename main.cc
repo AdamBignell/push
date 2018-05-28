@@ -326,8 +326,8 @@ int main(int argc, char *argv[])
   int holdFor = 0;
 
   int contractRate = 100;
-  if (world.havePolygon)
-    contractRate = 200;
+  // if (world.havePolygon)
+  //   contractRate = 200;
 
   /* Loop until the user closes the window */
   // Note that for irregular polygons we define the radius as the shortest distance
@@ -361,7 +361,8 @@ int main(int argc, char *argv[])
 
           //xdelta = 0.1;
           if (holdAtMin)
-            holdFor = 5; // No empirical reason for 5 specifically
+            // Trial and error: this is a decent heuristic
+            holdFor = 1000/contractRate;
           continue;
         }
 

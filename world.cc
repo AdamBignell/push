@@ -215,15 +215,18 @@ double World::GetRadMin(double numBoxes, double boxArea, double robot_size, Poly
 {
   //TODO: This still feels buggy for user-defined polygons
   double totalBoxArea = numBoxes * boxArea;
+  double testScale = 0.95;
   if (havePolygon)
   {
     double area = tempPoly.getArea();
-    while (area > totalBoxArea) // Can we do this loop algebraically?
+    // Can we do this loop algebraically?
+    // Stop one iteration early to account for
+    // the bodies of the robots themselves
+    while (area * testScale > totalBoxArea)
     {
-      tempPoly.scale(0.95);
-      area = tempPoly.getArea();
+      tempPoly.scale(testScale);
+      area *= testScale*testScale; // Area grows by the square of the scaling
     }
-    tempPoly.scale(1.10);
     return tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
   }
 
@@ -237,11 +240,12 @@ double World::GetSetRadMax(Polygon& tempPoly){
   if (havePolygon)
   {
     double arenaArea = width*height;
+    double testScale = 1.05;
     double area = tempPoly.getArea();
     while (area < arenaArea) // Can we do this loop algebraically?
     {
-      tempPoly.scale(1.05);
-      area = tempPoly.getArea();
+      tempPoly.scale(testScale);
+      area *= testScale*testScale;
     }
     return tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
   }
