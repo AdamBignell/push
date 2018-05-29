@@ -128,6 +128,7 @@ int main(int argc, char *argv[])
   double box_size = 0.25;
   Pusher::robot_shape_t robot_type = Pusher::SHAPE_RECT;
   Box::box_shape_t box_type = Box::SHAPE_RECT;
+  int GUITIME = 1;
 
   // This is the file holding the polygon vertices
   std::string pfileName = "";
@@ -140,12 +141,13 @@ int main(int argc, char *argv[])
       {"boxsize", required_argument, NULL, 's'},
       {"robottype", required_argument, NULL, 't'},
       {"boxtype", required_argument, NULL, 'y'},
+      {"guitime", required_argument, NULL, 'g'},
       //  { "help",  optional_argument,   NULL,  'h' },
       {NULL, 0, NULL, 0}};
 
   int ch = 0, optindex = 0;
   char firstChar;
-  while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y:p:", longopts, &optindex)) != -1)
+  while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y:p:g:", longopts, &optindex)) != -1)
   {
     switch (ch)
     {
@@ -201,6 +203,9 @@ int main(int argc, char *argv[])
       //   puts( USAGE );
       //   exit(0);
       //   break;
+    case 'g':
+      GUITIME = atoi(optarg);
+      break;
     default:
       printf("unhandled option %c\n", ch);
       //puts( USAGE );
@@ -208,7 +213,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  GuiWorld world(WIDTH, HEIGHT, LIGHTS);
+  GuiWorld world(WIDTH, HEIGHT, GUITIME, LIGHTS);
 
   for (int i = 0; i < BOXES; i++)
     world.AddBox(new Box(world, box_type, box_size,
@@ -268,7 +273,7 @@ int main(int argc, char *argv[])
     world.polygon.translate((WIDTH-1)/2.0, (HEIGHT-1)/2.0, true);
   }
 
-  double delta = 0.4;
+  double delta = 0.6;
   double sdelta = 0.95;
   double xdelta = 0;
   double ydelta = 0;
@@ -317,7 +322,7 @@ int main(int argc, char *argv[])
     radius = world.polygon.getDistFromPoint(goalx, goaly);
   }
 
-  double RADMIN = world.GetRadMin(BOXES, boxArea, robot_size, world.polygon); 
+  double RADMIN = world.GetRadMin(BOXES, boxArea, robot_size, world.polygon);
 
   // Can stop the holding behaviour by setting this to false
   bool holdAtMin = true;
