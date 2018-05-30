@@ -1,0 +1,85 @@
+Index: b2PolygonShape.cpp
+===================================================================
+--- b2PolygonShape.cpp	(revision 278)
++++ b2PolygonShape.cpp	(working copy)
+@@ -71,6 +71,8 @@
+ 	return 1;
+ }
+ 
++#include <stdio.h>
++
+ static b2Vec2 ComputeCentroid(const b2Vec2* vs, int32 count)
+ {
+ 	b2Assert(count >= 3);
+@@ -109,12 +111,17 @@
+ 
+ 		// Area weighted centroid
+ 		c += triangleArea * inv3 * (p1 + p2 + p3);
+-	}
++    }
+ 
+ 	// Centroid
+-	b2Assert(area > b2_epsilon);
+-	c *= 1.0f / area;
+-	return c;
++    //b2Assert(area > b2_epsilon);
++    if ( area > b2_epsilon ) {
++        c *= 1.0f / area;
++        return c;
++    }
++    else {
++        return inv3 * (vs[0] + vs[1] + vs[2]);
++    }
+ }
+ 
+ void b2PolygonShape::Set(const b2Vec2* vertices, int32 count)
+@@ -128,45 +135,20 @@
+ 	
+ 	int32 n = b2Min(count, b2_maxPolygonVertices);
+ 
+-	// Perform welding and copy vertices into local buffer.
++	// Copy vertices into local buffer
+ 	b2Vec2 ps[b2_maxPolygonVertices];
+-	int32 tempCount = 0;
+ 	for (int32 i = 0; i < n; ++i)
+ 	{
+-		b2Vec2 v = vertices[i];
+-
+-		bool unique = true;
+-		for (int32 j = 0; j < tempCount; ++j)
+-		{
+-			if (b2DistanceSquared(v, ps[j]) < 0.5f * b2_linearSlop)
+-			{
+-				unique = false;
+-				break;
+-			}
+-		}
+-
+-		if (unique)
+-		{
+-			ps[tempCount++] = v;
+-		}
++		ps[i] = vertices[i];
+ 	}
+ 
+-	n = tempCount;
+-	if (n < 3)
+-	{
+-		// Polygon is degenerate.
+-		b2Assert(false);
+-		SetAsBox(1.0f, 1.0f);
+-		return;
+-	}
+-
+ 	// Create the convex hull using the Gift wrapping algorithm
+ 	// http://en.wikipedia.org/wiki/Gift_wrapping_algorithm
+ 
+ 	// Find the right most point on the hull
+ 	int32 i0 = 0;
+ 	float32 x0 = ps[0].x;
+-	for (int32 i = 1; i < n; ++i)
++	for (int32 i = 1; i < count; ++i)
+ 	{
+ 		float32 x = ps[i].x;
+ 		if (x > x0 || (x == x0 && ps[i].y < ps[i0].y))
+
