@@ -18,7 +18,7 @@ HDR = push.hh
 # Change this to wherever your Box2D source code is
 # Note the multiple levels of directories named 'Box2D'
 # export CPATH=$CPATH:/home/adam/Documents/Autonomy/push/b2dJson
-export CPATH=$CPATH:/home/adam/Documents/packages/Box2D_v2.3.0/Box2D
+export CPATH=$CPATH:/home/abignell/Documents/USRA/push/Box2D_v2.3.0/Box2D
 
 all: push
 
@@ -27,4 +27,5 @@ push: $(SRC) $(HDR)
 
 clean:
 	rm -f push 
-	rm -f *.o
+rm -f *.o
+

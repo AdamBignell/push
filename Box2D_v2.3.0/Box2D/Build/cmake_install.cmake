@@ -1,4 +1,4 @@
-# Install script for directory: /home/adam/Documents/packages/Box2D_v2.3.0/Box2D
+# Install script for directory: /home/abignell/Documents/USRA/push/Box2D_v2.3.0/Box2D
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -34,11 +34,11 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/adam/Documents/packages/Box2D_v2.3.0/Box2D/Build/Box2D/cmake_install.cmake")
-  include("/home/adam/Documents/packages/Box2D_v2.3.0/Box2D/Build/HelloWorld/cmake_install.cmake")
-  include("/home/adam/Documents/packages/Box2D_v2.3.0/Box2D/Build/freeglut/cmake_install.cmake")
-  include("/home/adam/Documents/packages/Box2D_v2.3.0/Box2D/Build/glui/cmake_install.cmake")
-  include("/home/adam/Documents/packages/Box2D_v2.3.0/Box2D/Build/Testbed/cmake_install.cmake")
+  include("/home/abignell/Documents/USRA/push/Box2D_v2.3.0/Box2D/Build/Box2D/cmake_install.cmake")
+  include("/home/abignell/Documents/USRA/push/Box2D_v2.3.0/Box2D/Build/HelloWorld/cmake_install.cmake")
+  include("/home/abignell/Documents/USRA/push/Box2D_v2.3.0/Box2D/Build/freeglut/cmake_install.cmake")
+  include("/home/abignell/Documents/USRA/push/Box2D_v2.3.0/Box2D/Build/glui/cmake_install.cmake")
+  include("/home/abignell/Documents/USRA/push/Box2D_v2.3.0/Box2D/Build/Testbed/cmake_install.cmake")
 
 endif()
 
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/adam/Documents/packages/Box2D_v2.3.0/Box2D/Build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/abignell/Documents/USRA/push/Box2D_v2.3.0/Box2D/Build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

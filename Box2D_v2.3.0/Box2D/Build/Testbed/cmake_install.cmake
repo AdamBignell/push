@@ -1,4 +1,4 @@
-# Install script for directory: /home/adam/Documents/packages/Box2D_v2.3.0/Box2D/Testbed
+# Install script for directory: /home/abignell/Documents/USRA/push/Box2D_v2.3.0/Box2D/Testbed
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
