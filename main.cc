@@ -268,9 +268,10 @@ int main(int argc, char *argv[])
   // (width, height, height above arena, brightness)
   world.AddLightGrid(sqrt(LIGHTS), sqrt(LIGHTS), 2.0, 0.0);
 
-  world.saveWorldHeader(outputFileName);
-  world.appendWorldStateToFile(outputFileName);
-  return 0;
+  // Testing output files
+  // world.saveWorldHeader(outputFileName);
+  // world.appendWorldStateToFile(outputFileName);
+  // return 0;
 
   // Read the polygon from the input file
   std::ifstream infile(pFileName);

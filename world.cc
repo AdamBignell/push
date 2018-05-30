@@ -301,8 +301,11 @@ void World::appendWorldStateToFile(std::string saveFileName)
   outfile << "LIGHTS:\n";
   for (auto light : lights)
     {
+      if (light->intensity != 0)
+      {
         // x, y, a, intensity
         outfile << light->x << ' ' << light->y << ' ' << light->z << ' ' << light->intensity << '\n';
+      }
     }
     
   // outfile << worldString; // Write the world state
