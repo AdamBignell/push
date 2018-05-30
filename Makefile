@@ -9,7 +9,7 @@
 # This list of dependencies works around
 # the new (as of Spring 2018) and inconvenient Box2D building
 CCFLAGS = -std=c++11 -g -O0 `pkg-config --cflags glfw3`
-LDFLAGS = `pkg-config --libs glfw3` -lBox2D -lGL -lX11 -lXrandr -lXinerama -lXxf86vm -lXcursor -lpthread -ldl -lb2dJson
+LDFLAGS = `pkg-config --libs glfw3` -lBox2D -lGL -lX11 -lXrandr -lXinerama -lXxf86vm -lXcursor -lpthread -ldl #-lb2dJson
 
 
 SRC = main.cc world.cc robot.cc box.cc guiworld.cc polygon.cc
