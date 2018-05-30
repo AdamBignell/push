@@ -261,6 +261,7 @@ void World::saveWorldHeader(std::string saveFileName)
   std::ofstream outfile;
   outfile.open(saveFileName, std::ios_base::app);
 
+  outfile << "HEADER:\n";
   outfile << "-w " << width << " -h " << height;
   outfile << " -r " << robots.size() << " -b " << boxes.size();
   outfile << " -z " << robots[0]->size << " -s " << boxes[0]->size;

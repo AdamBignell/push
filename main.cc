@@ -11,6 +11,7 @@
 #include <sstream>
 #include <string>
 #include <fstream>
+#include <sstream>
 
 template <class T>
 int sign(T x)
@@ -152,45 +153,56 @@ int main(int argc, char *argv[])
 
   int ch = 0, optindex = 0;
   char firstChar;
-  while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y:p:g:o:i:", longopts, &optindex)) != -1)
+  char optArgProxy[50];
+  std::vector<std::string> tokens;
+  while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y:p:g:o:i:", longopts, &optindex)) != -1 || optindex < tokens.size())
   {
+    if (argv)
+      strcpy(optArgProxy, optarg);
+    else 
+    {
+      // Once we get the input file, switch over to the options from there
+      ch = tokens[optindex][1];
+      strcpy(optArgProxy, tokens[optindex+1].c_str());
+      optindex += 2;
+    }
     switch (ch)
     {
     case 0: // long option given
       printf("option %s given", longopts[optindex].name);
-      if (optarg)
-        printf(" with arg %s", optarg);
+      if (optArgProxy)
+        printf(" with arg %s", optArgProxy);
       printf("\n");
       break;
     case 'w':
-      WIDTH = atof(optarg);
+      WIDTH = atof(optArgProxy);
       break;
     case 'h':
-      HEIGHT = atof(optarg);
+      HEIGHT = atof(optArgProxy);
       break;
     case 'r':
-      ROBOTS = atoi(optarg);
+      ROBOTS = atoi(optArgProxy);
       break;
     case 'b':
-      BOXES = atoi(optarg);
+      BOXES = atoi(optArgProxy);
       break;
     case 'z':
-      robot_size = atof(optarg);
+      robot_size = atof(optArgProxy);
       break;
     case 's':
-      box_size = atof(optarg);
+      box_size = atof(optArgProxy);
       break;
     case 't':
-      firstChar = optarg[0];
+      firstChar = optArgProxy[0];
       if (firstChar == 'C' || firstChar == 'c')
-        robot_type = Pusher::SHAPE_CIRC; // TODO: This causes a segmentation fault?
+        robot_type = Pusher::SHAPE_CIRC;
       else if (firstChar == 'R' || firstChar == 'r')
         robot_type = Pusher::SHAPE_RECT;
       else
         printf("unhandled robot shape %c\n", firstChar);
       break;
     case 'y':
-      firstChar = optarg[0];
+      firstChar = optArgProxy[0];
       if (firstChar == 'H' || firstChar == 'h')
         box_type = Box::SHAPE_HEX;
       else if (firstChar == 'C' || firstChar == 'c')
@@ -201,7 +213,7 @@ int main(int argc, char *argv[])
         printf("unhandled box shape %c\n", firstChar);
       break;
     case 'p':
-      pFileName = optarg;
+      pFileName = optArgProxy;
       break;
       // case 'h':
       // case '?':
@@ -209,13 +221,31 @@ int main(int argc, char *argv[])
       //   exit(0);
       //   break;
     case 'g':
-      GUITIME = atoi(optarg);
+      GUITIME = atoi(optArgProxy);
       break;
     case 'o':
-      outputFileName = optarg;
+      outputFileName = optArgProxy;
       break;
     case 'i':
-      inputFileName = optarg;
+    { // necessary since we initialize
+      // As soon as we have an input file
+      // we begin using the options from there
+      inputFileName = optArgProxy;
+      std::string headerStr;
+      std::ifstream file(inputFileName);
+      getline(file, headerStr);
+      if (headerStr == "HEADER:")
+        getline(file, headerStr);
+      else
+        break;
+      std::stringstream ss(headerStr);
+      std::string item;
+      while (getline(ss, item, ' ')) {
+        tokens.push_back(item);
+      }
+      argv = NULL;
+      optindex = 0;
+    }
       break;
     default:
       printf("unhandled option %c\n", ch);
@@ -241,7 +271,6 @@ int main(int argc, char *argv[])
     //   world.b2world = newb2world;
     //   world.Step(timeStep);
     // }
-    return 0;
   }
 
   for (int i = 0; i < BOXES; i++)
@@ -269,9 +298,7 @@ int main(int argc, char *argv[])
   world.AddLightGrid(sqrt(LIGHTS), sqrt(LIGHTS), 2.0, 0.0);
 
   // Testing output files
-  // world.saveWorldHeader(outputFileName);
-  // world.appendWorldStateToFile(outputFileName);
-  // return 0;
+  world.saveWorldHeader(outputFileName);
 
   // Read the polygon from the input file
   std::ifstream infile(pFileName);
@@ -444,12 +471,15 @@ int main(int argc, char *argv[])
       }
     }
 
+    // b2dJson attempt:
     // WARNING: This call outputs a MASSIVE file
     // It's the entire world state at every single step
     // if (outputFileName != "")
     // {
     //   world.saveWorldToFile(outputFileName);
     // }
+
+    world.appendWorldStateToFile(outputFileName);
 
     world.Step(timeStep);
   }
