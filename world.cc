@@ -1,4 +1,5 @@
 #include "push.hh"
+#include <fstream>
 
 World::World(double width, double height, double numLights) : steps(0),
                                                               width(width),
@@ -253,4 +254,57 @@ double World::GetSetRadMax(Polygon& tempPoly){
   //Circle case
   double radMax = sqrt(width*height / M_PI);
   return radMax;
+}
+
+void World::saveWorldHeader(std::string saveFileName)
+{
+  std::ofstream outfile;
+  outfile.open(saveFileName, std::ios_base::app);
+
+  outfile << "-w " << width << " -h " << height;
+  outfile << " -r " << robots.size() << " -b " << boxes.size();
+  outfile << " -z " << robots[0]->size << " -s " << boxes[0]->size;
+  outfile << " -t " << robots[0]->cshape << " -y " << boxes[0]->cshape << '\n';
+  outfile << "$\n";
+}
+
+// Saves the world state to a JSON file
+void World::appendWorldStateToFile(std::string saveFileName)
+{
+  // Initial attempt using box2dJson
+  // worldString = jsonWorld.writeToString(b2world);
+  std::ofstream outfile;
+  outfile.open(saveFileName, std::ios_base::app);
+
+  b2Vec2 pose;
+  // Write the robot information
+  outfile << "ROBOTS:\n";
+  for (auto bot : robots)
+    {
+        // x, y, a, charge
+        pose = bot->body->GetPosition();
+        outfile << pose.x << ' ' << pose.y << ' ' << bot->body->GetAngle()<< ' ' <<  bot->charge << '\n';
+    }
+
+  outfile << "!\n"; // Write a delimeter
+
+  // Write the box information
+  outfile << "BOXES:\n";
+  for (auto box : boxes)
+    {
+        // x, y, a
+        pose = box->body->GetPosition();
+        outfile << pose.x << ' ' << pose.y << ' ' << box->body->GetAngle()<< '\n';
+    }
+
+  // Write the light information
+  outfile << "LIGHTS:\n";
+  for (auto light : lights)
+    {
+        // x, y, a, intensity
+        outfile << light->x << ' ' << light->y << ' ' << light->z << ' ' << light->intensity << '\n';
+    }
+    
+  // outfile << worldString; // Write the world state
+  outfile << "!\n"; // Write a delimeter
 }

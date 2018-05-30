@@ -131,7 +131,10 @@ int main(int argc, char *argv[])
   int GUITIME = 1;
 
   // This is the file holding the polygon vertices
-  std::string pfileName = "";
+  // and the output file of the execution
+  std::string pFileName = "";
+  std::string outputFileName = "";
+  std::string inputFileName = "";
 
   /* options descriptor */
   static struct option longopts[] = {
@@ -142,12 +145,14 @@ int main(int argc, char *argv[])
       {"robottype", required_argument, NULL, 't'},
       {"boxtype", required_argument, NULL, 'y'},
       {"guitime", required_argument, NULL, 'g'},
+      {"outputfile", required_argument, NULL, 'o'},
+      {"inputfile", required_argument, NULL, 'i'},
       //  { "help",  optional_argument,   NULL,  'h' },
       {NULL, 0, NULL, 0}};
 
   int ch = 0, optindex = 0;
   char firstChar;
-  while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y:p:g:", longopts, &optindex)) != -1)
+  while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y:p:g:o:i:", longopts, &optindex)) != -1)
   {
     switch (ch)
     {
@@ -196,7 +201,7 @@ int main(int argc, char *argv[])
         printf("unhandled box shape %c\n", firstChar);
       break;
     case 'p':
-      pfileName = optarg;
+      pFileName = optarg;
       break;
       // case 'h':
       // case '?':
@@ -206,6 +211,12 @@ int main(int argc, char *argv[])
     case 'g':
       GUITIME = atoi(optarg);
       break;
+    case 'o':
+      outputFileName = optarg;
+      break;
+    case 'i':
+      inputFileName = optarg;
+      break;
     default:
       printf("unhandled option %c\n", ch);
       //puts( USAGE );
@@ -214,6 +225,24 @@ int main(int argc, char *argv[])
   }
 
   GuiWorld world(WIDTH, HEIGHT, GUITIME, LIGHTS);
+
+  // If we have an input file we don't need any computations
+  if (inputFileName != "")
+  {
+    // Initial Attempt using b2dJson
+    // std::string stateStr;
+    // std::ifstream file(inputFileName);
+    // b2World* newb2world;
+
+    // while (getline(file, stateStr, '$'))
+    // {
+    //   std::string errMsg;
+    //   newb2world = world.jsonWorld.readFromString(stateStr, errMsg);
+    //   world.b2world = newb2world;
+    //   world.Step(timeStep);
+    // }
+    return 0;
+  }
 
   for (int i = 0; i < BOXES; i++)
     world.AddBox(new Box(world, box_type, box_size,
@@ -239,8 +268,12 @@ int main(int argc, char *argv[])
   // (width, height, height above arena, brightness)
   world.AddLightGrid(sqrt(LIGHTS), sqrt(LIGHTS), 2.0, 0.0);
 
-  // Need to read the polygon from the input file
-  std::ifstream infile(pfileName);
+  world.saveWorldHeader(outputFileName);
+  world.appendWorldStateToFile(outputFileName);
+  return 0;
+
+  // Read the polygon from the input file
+  std::ifstream infile(pFileName);
   std::string line;
   while (std::getline(infile, line))
   {
@@ -250,7 +283,7 @@ int main(int argc, char *argv[])
     world.polygon.addVertex(x, y);
   }
 
-  if (world.polygon.vertices.size() < 3 && pfileName != "")
+  if (world.polygon.vertices.size() < 3 && pFileName != "")
   {
     printf("The input file was invalid or did not define a polygon\n.");
     exit(0);
@@ -409,6 +442,13 @@ int main(int argc, char *argv[])
         // goaly += ydelta;
       }
     }
+
+    // WARNING: This call outputs a MASSIVE file
+    // It's the entire world state at every single step
+    // if (outputFileName != "")
+    // {
+    //   world.saveWorldToFile(outputFileName);
+    // }
 
     world.Step(timeStep);
   }

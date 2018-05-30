@@ -1,6 +1,8 @@
 #include <Box2D/Box2D.h>
 #include <GLFW/glfw3.h>
+#include "b2dJson/b2dJson.h"
 #include <vector>
+#include <string>
 
 // Note that the headers for are all push source files are found here
 
@@ -79,6 +81,9 @@ class World
 public:
   b2World *b2world;
 
+  //b2dJson jsonWorld;
+  std::string worldString;
+
   double width, height, numLights;
 
   b2Body *boxWall[4];
@@ -124,6 +129,10 @@ public:
   // Approximately Match arena Size,
   // and actually set the polgyon to this size
   double GetSetRadMax(Polygon& tempPoly);
+
+  // Saves the world state to a JSON file
+  void saveWorldHeader(std::string saveFileName);
+  void appendWorldStateToFile(std::string saveFileName);
 };
 
 class GuiWorld : public World
@@ -139,7 +148,7 @@ public:
   GLFWwindow *window;
   int draw_interval;
 
-  GuiWorld(double width, double height, double numLights);
+  GuiWorld(double width, double height, int draw_interval, double numLights);
   ~GuiWorld();
 
   virtual void Step(double timestep);
@@ -172,6 +181,7 @@ class Robot
 public:
   World &world;
   double size;
+  char cshape;
 
   typedef enum
   {
@@ -227,6 +237,7 @@ class Box
 {
 public:
   double size;
+  char cshape;
 
   typedef enum
   {

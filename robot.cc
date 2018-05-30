@@ -53,12 +53,14 @@ Robot::Robot(World &world,
   //Use square robots
   if (shape == SHAPE_RECT)
   {
+    cshape = 'R';
     botShape.SetAsBox(size / 2.0, size / 2.0);
     fixtureDef.shape = &botShape;
   }
   //Use circular robots
   else if (shape == SHAPE_CIRC)
   {
+    cshape = 'C';
     circShape.m_p.Set(0, 0);
     circShape.m_radius = size / 2.0; //use class variable
     fixtureDef.shape = &circShape;

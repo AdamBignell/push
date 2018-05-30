@@ -12,10 +12,12 @@ Box::Box(World &world, box_shape_t shape, double size, double x, double y, doubl
   switch (shape)
   {
   case SHAPE_RECT:
+    cshape = 'R';
     dynamicBox.SetAsBox(size / 2.0, size / 2.0);
     break;
   case SHAPE_HEX:
   {
+    cshape = 'H';
     b2Vec2 verts[6];
 
     for (int i = 0; i < 6; i++)
@@ -29,6 +31,7 @@ Box::Box(World &world, box_shape_t shape, double size, double x, double y, doubl
   }
   case SHAPE_CIRC:
   {
+    cshape = 'C';
     dynamicCircle.m_p.Set(0.0f, 0.0f);         //position, relative to body position
     dynamicCircle.m_radius = size / 2.0; //radius
     break;
