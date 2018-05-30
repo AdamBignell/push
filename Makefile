@@ -27,5 +27,5 @@ push: $(SRC) $(HDR)
 
 clean:
 	rm -f push 
-rm -f *.o
+	rm -f *.o
 
