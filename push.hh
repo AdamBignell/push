@@ -21,8 +21,9 @@ class Light
 public:
   double intensity;
   double x, y, z; // location (z is height above the x,y plane of the world)
+  int index;
 
-  Light(double x, double y, double z, double intensity) : x(x), y(y), z(z), intensity(intensity)
+  Light(double x, double y, double z, double intensity, int index ): x(x), y(y), z(z), intensity(intensity), index(index)
   {
   }
 };
@@ -85,6 +86,7 @@ public:
   std::string worldString;
 
   double width, height, numLights;
+  int draw_interval;
 
   b2Body *boxWall[4];
   b2Body *robotWall[4];
@@ -98,7 +100,7 @@ public:
   std::vector<Box *> boxes;
   std::vector<Robot *> robots;
 
-  World(double width, double height, double numLights);
+  World(double width, double height, double numLights, int drawInterval);
 
   virtual void AddRobot(Robot *robot);
   virtual void AddBox(Box *box);
@@ -150,7 +152,6 @@ public:
   std::vector<double> bright;
 
   GLFWwindow *window;
-  int draw_interval;
 
   GuiWorld(double width, double height, int draw_interval, double numLights);
   ~GuiWorld();

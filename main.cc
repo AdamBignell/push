@@ -244,6 +244,7 @@ int main(int argc, char *argv[])
         tokens.push_back(item);
       }
       argv = NULL;
+      argc = 0;
       optindex = 0;
     }
       break;
@@ -256,57 +257,7 @@ int main(int argc, char *argv[])
 
   GuiWorld world(WIDTH, HEIGHT, GUITIME, LIGHTS);
 
-  // If we have an input file we don't need any computations
-  if (inputFileName != "")
-  {
-    // Initial Attempt using b2dJson
-    // std::string stateStr;
-    // std::ifstream file(inputFileName);
-    // b2World* newb2world;
-
-    // while (getline(file, stateStr, '$'))
-    // {
-    //   std::string errMsg;
-    //   newb2world = world.jsonWorld.readFromString(stateStr, errMsg);
-    //   world.b2world = newb2world;
-    //   world.Step(timeStep);
-    // }
-
-    std::string sectionStr;
-    std::string lineStr;
-    std::ifstream file(inputFileName);
-    getline(file, sectionStr, '$'); // Dump the header
-    while (getline(file, sectionStr, '$')) // WorldStates
-     {
-       std::istringstream sectionStream(sectionStr);
-       while(getline(sectionStream, lineStr, '!')) // Sections
-       {
-          char section = lineStr.c_str()[1]; // ignore the newline
-          switch (section)
-          {
-          case 'H':
-          ;
-          break;
-          case 'R':
-            getline(sectionStream, lineStr, '!');
-            world.updateRobotsFromString(lineStr);
-          ;
-          break;
-          case 'B':
-          ;
-          break;
-          case 'L':
-          ;
-          break;
-          default:
-            printf("unhandled input file section %c\n", section);
-          }
-       }
-       world.Step(timeStep);
-     }
-    return 0;
-  }
-
+  // Create objects
   for (int i = 0; i < BOXES; i++)
     world.AddBox(new Box(world, box_type, box_size,
                          WIDTH / 4.0 + drand48() * WIDTH * 0.5,
@@ -331,8 +282,64 @@ int main(int argc, char *argv[])
   // (width, height, height above arena, brightness)
   world.AddLightGrid(sqrt(LIGHTS), sqrt(LIGHTS), 2.0, 0.0);
 
+  // This is used in both while loops to
+  // display the world states more cleanly
+  int updateRate = 100;
+  bool running = true;
+  // If we have an input file we don't need any computations
+  if (inputFileName != "")
+  {
+    // It doesn't make sense to skip frames here
+    world.draw_interval = 1;
+    std::string sectionStr;
+    std::string lineStr;
+    std::ifstream file(inputFileName);
+    while (!world.RequestShutdown() && running)
+    {
+      if (world.steps % updateRate == 1) // every now and again
+      {
+        getline(file, sectionStr, '$'); // Dump the header
+        running = getline(file, sectionStr, '$'); // WorldStates
+
+        std::istringstream sectionStream(sectionStr);
+        while(getline(sectionStream, lineStr, '!')) // Sections
+        {
+          char section = lineStr.c_str()[1]; // ignore the newline
+          switch (section)
+          {
+          case 'H':
+            // This shouldn't happen. Just dump the options
+            getline(sectionStream, lineStr, '!');
+          break;
+          case 'R':
+            getline(sectionStream, lineStr, '!');
+            world.updateRobotsFromString(lineStr);
+          ;
+          break;
+          case 'B':
+            getline(sectionStream, lineStr, '!');
+            world.updateBoxesFromString(lineStr);
+          ;
+          break;
+          case 'L':
+            getline(sectionStream, lineStr, '!');
+            world.updateLightsFromString(lineStr);
+          ;
+          break;
+          default:
+          ;
+          }
+        }
+      }
+      world.Step(timeStep);
+      world.paused = true;
+    }
+    return 0;
+  }
+
   // Testing output files
-  world.saveWorldHeader(outputFileName);
+  if (outputFileName != "")
+    world.saveWorldHeader(outputFileName);
 
   // Read the polygon from the input file
   std::ifstream infile(pFileName);
@@ -425,16 +432,13 @@ int main(int argc, char *argv[])
   // Initialization
   int holdFor = 0;
 
-  int contractRate = 100;
-  // if (world.havePolygon)
-  //   contractRate = 200;
-
   /* Loop until the user closes the window */
   // Note that for irregular polygons we define the radius as the shortest distance
   // to any point on the polygon
+  int writeState = GUITIME;
   while (!world.RequestShutdown() && world.steps < maxsteps)
   {
-    if (world.steps % contractRate == 1) // every now and againPATTWIDTH
+    if (world.steps % updateRate == 1) // every now and again
     {
       if (holdFor != 0 && holdAtMin)
       {
@@ -462,7 +466,7 @@ int main(int argc, char *argv[])
           //xdelta = 0.1;
           if (holdAtMin)
             // Trial and error: this is a decent heuristic
-            holdFor = 1000/contractRate;
+            holdFor = 1000/updateRate;
           continue;
         }
 
@@ -505,15 +509,11 @@ int main(int argc, char *argv[])
       }
     }
 
-    // b2dJson attempt:
-    // WARNING: This call outputs a MASSIVE file
-    // It's the entire world state at every single step
-    // if (outputFileName != "")
-    // {
-    //   world.saveWorldToFile(outputFileName);
-    // }
-    if (world.steps % GUITIME == 0)
+    if (--writeState == 0)
+    {
       world.appendWorldStateToFile(outputFileName);
+      writeState = GUITIME;
+    }
 
     world.Step(timeStep);
   }

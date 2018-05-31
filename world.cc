@@ -3,10 +3,11 @@
 #include <sstream>
 #include <string>
 
-World::World(double width, double height, double numLights) : steps(0),
+World::World(double width, double height, double numLights, int drawInterval) : steps(0),
                                                               width(width),
                                                               height(height),
                                                               numLights(numLights),
+                                                              draw_interval(drawInterval),
                                                               b2world(new b2World(b2Vec2(0, 0))), // gravity
                                                               lights()                            //empty vector
 {
@@ -74,8 +75,8 @@ void World::AddLightGrid(size_t xcount, size_t ycount, double z, double intensit
       AddLight(new Light(x * xspace + xspace / 2.0,
                          y * yspace + yspace / 2.0,
                          z,
-                         intensity));
-}
+                         intensity, x + y * xcount));
+} // We assume that xcount=ycount above
 
 void World::AddRobot(Robot *r)
 {
@@ -267,7 +268,8 @@ void World::saveWorldHeader(std::string saveFileName)
   outfile << "-w " << width << " -h " << height;
   outfile << " -r " << robots.size() << " -b " << boxes.size();
   outfile << " -z " << robots[0]->size << " -s " << boxes[0]->size;
-  outfile << " -t " << robots[0]->cshape << " -y " << boxes[0]->cshape << '\n';
+  outfile << " -t " << robots[0]->cshape << " -y " << boxes[0]->cshape;
+  outfile << " -g " << draw_interval << '\n';
   outfile << "$\n";
 }
 
@@ -305,7 +307,7 @@ void World::appendWorldStateToFile(std::string saveFileName)
       if (light->intensity != 0)
       {
         // x, y, a, intensity
-        outfile << light->x << ' ' << light->y << ' ' << light->z << ' ' << light->intensity << '\n';
+        outfile << light->index << ' ' << light->intensity << '\n';
       }
     }  
   // outfile << worldString; // Write the world state
@@ -335,11 +337,41 @@ void World::updateRobotsFromString(std::string &robotStr)
 // Takes a section of boxes and updates the positions in the world
 void World::updateBoxesFromString(std::string &boxStr)
 {
-  ;
+  std::istringstream iss(boxStr);
+  std::string box;
+  int bDex = 0;
+  getline(iss, box, '\n'); // dump the first
+  float x, y, a, charge;
+  while (getline(iss, box, '\n'))
+  {
+    std::istringstream poseStr(box);
+    poseStr >> x >> y >> a;
+    b2Vec2 pose(x,y);
+    boxes[bDex]->body->SetTransform(pose, a);
+    bDex++;
+  }
 }
 
 // Takes a section of boxes and updates the brightness in the world
 void World::updateLightsFromString(std::string &lightStr)
 {
-  ;
+  double lside = sqrt(numLights);
+  std::istringstream iss(lightStr);
+  std::string light;
+  getline(iss, light, '\n'); // dump the first
+  float index, intensity;
+  for (int i = 0; i < lights.size(); ++i)
+  {
+    // Zero everything
+    // We save a ton of space in the state file this way
+    // since on average we can assume a light is off
+    lights[i]->intensity = 0;
+  }
+  double xdex, ydex;
+  while (getline(iss, light, '\n'))
+  {
+    std::istringstream indexStr(light);
+    indexStr >> index >> intensity;
+    SetLightIntensity(index, intensity);
+  }
 }
