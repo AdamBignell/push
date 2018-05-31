@@ -1,5 +1,7 @@
 #include "push.hh"
 #include <fstream>
+#include <sstream>
+#include <string>
 
 World::World(double width, double height, double numLights) : steps(0),
                                                               width(width),
@@ -279,27 +281,25 @@ void World::appendWorldStateToFile(std::string saveFileName)
 
   b2Vec2 pose;
   // Write the robot information
-  outfile << "ROBOTS:\n";
+  outfile << "ROBOTS:\n" << "!\n";
   for (auto bot : robots)
     {
         // x, y, a, charge
         pose = bot->body->GetPosition();
         outfile << pose.x << ' ' << pose.y << ' ' << bot->body->GetAngle()<< ' ' <<  bot->charge << '\n';
     }
-
   outfile << "!\n"; // Write a delimeter
-
   // Write the box information
-  outfile << "BOXES:\n";
+  outfile << "BOXES:\n" << "!\n";
   for (auto box : boxes)
     {
         // x, y, a
         pose = box->body->GetPosition();
         outfile << pose.x << ' ' << pose.y << ' ' << box->body->GetAngle()<< '\n';
     }
-
+  outfile << "!\n";
   // Write the light information
-  outfile << "LIGHTS:\n";
+  outfile << "LIGHTS:\n"  << "!\n";
   for (auto light : lights)
     {
       if (light->intensity != 0)
@@ -307,8 +307,39 @@ void World::appendWorldStateToFile(std::string saveFileName)
         // x, y, a, intensity
         outfile << light->x << ' ' << light->y << ' ' << light->z << ' ' << light->intensity << '\n';
       }
-    }
-    
+    }  
   // outfile << worldString; // Write the world state
-  outfile << "!\n"; // Write a delimeter
+  outfile << "!\n";
+  outfile << "$\n";
+}
+
+// Takes a section of robots and updates the positions/charges in the world
+void World::updateRobotsFromString(std::string &robotStr)
+{
+  std::istringstream iss(robotStr);
+  std::string robot;
+  int rDex = 0;
+  getline(iss, robot, '\n'); // dump the first
+  float x, y, a, charge;
+  while (getline(iss, robot, '\n'))
+  {
+    std::istringstream poseStr(robot);
+    poseStr >> x >> y >> a >> charge;
+    b2Vec2 pose(x,y);
+    robots[rDex]->body->SetTransform(pose, a);
+    robots[rDex]->charge = charge;
+    rDex++;
+  }
+}
+
+// Takes a section of boxes and updates the positions in the world
+void World::updateBoxesFromString(std::string &boxStr)
+{
+  ;
+}
+
+// Takes a section of boxes and updates the brightness in the world
+void World::updateLightsFromString(std::string &lightStr)
+{
+  ;
 }

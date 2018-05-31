@@ -133,6 +133,10 @@ public:
   // Saves the world state to a JSON file
   void saveWorldHeader(std::string saveFileName);
   void appendWorldStateToFile(std::string saveFileName);
+
+  void updateRobotsFromString(std::string &robotStr);
+  void updateBoxesFromString(std::string &boxStr);
+  void updateLightsFromString(std::string &lightStr);
 };
 
 class GuiWorld : public World

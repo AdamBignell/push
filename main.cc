@@ -271,6 +271,40 @@ int main(int argc, char *argv[])
     //   world.b2world = newb2world;
     //   world.Step(timeStep);
     // }
+
+    std::string sectionStr;
+    std::string lineStr;
+    std::ifstream file(inputFileName);
+    getline(file, sectionStr, '$'); // Dump the header
+    while (getline(file, sectionStr, '$')) // WorldStates
+     {
+       std::istringstream sectionStream(sectionStr);
+       while(getline(sectionStream, lineStr, '!')) // Sections
+       {
+          char section = lineStr.c_str()[1]; // ignore the newline
+          switch (section)
+          {
+          case 'H':
+          ;
+          break;
+          case 'R':
+            getline(sectionStream, lineStr, '!');
+            world.updateRobotsFromString(lineStr);
+          ;
+          break;
+          case 'B':
+          ;
+          break;
+          case 'L':
+          ;
+          break;
+          default:
+            printf("unhandled input file section %c\n", section);
+          }
+       }
+       world.Step(timeStep);
+     }
+    return 0;
   }
 
   for (int i = 0; i < BOXES; i++)
@@ -478,8 +512,8 @@ int main(int argc, char *argv[])
     // {
     //   world.saveWorldToFile(outputFileName);
     // }
-
-    world.appendWorldStateToFile(outputFileName);
+    if (world.steps % GUITIME == 0)
+      world.appendWorldStateToFile(outputFileName);
 
     world.Step(timeStep);
   }
