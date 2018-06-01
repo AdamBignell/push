@@ -111,6 +111,11 @@ public:
   // range, the call has no effect
   virtual void SetLightIntensity(size_t index, double intensity);
 
+  // Pull the next world state from the file
+  bool loadNextState(std::ifstream& file);
+
+  bool loadPolygonFromFile(std::ifstream& infile);
+
   // Lets us update the pattern of light in one function call with a few parameters
   // (goalx, goaly): center of contraction
   // probOn: How likely an 'on' is likely to actually be on. Useful for robot spacing

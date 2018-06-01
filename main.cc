@@ -286,82 +286,38 @@ int main(int argc, char *argv[])
   // display the world states more cleanly
   int updateRate = 100;
   bool running = true;
-  // If we have an input file we don't need any computations
+
+  // If we have an input file we don't need to calculate states
+  // The while here becomes the whole main loop
   if (inputFileName != "")
   {
     // It doesn't make sense to skip frames here
     world.draw_interval = 1;
-    std::string sectionStr;
-    std::string lineStr;
     std::ifstream file(inputFileName);
     while (!world.RequestShutdown() && running)
     {
       if (world.steps % updateRate == 1) // every now and again
       {
-        getline(file, sectionStr, '$'); // Dump the header
-        running = getline(file, sectionStr, '$'); // WorldStates
-
-        std::istringstream sectionStream(sectionStr);
-        while(getline(sectionStream, lineStr, '!')) // Sections
-        {
-          char section = lineStr.c_str()[1]; // ignore the newline
-          switch (section)
-          {
-          case 'H':
-            // This shouldn't happen. Just dump the options
-            getline(sectionStream, lineStr, '!');
-          break;
-          case 'R':
-            getline(sectionStream, lineStr, '!');
-            world.updateRobotsFromString(lineStr);
-          ;
-          break;
-          case 'B':
-            getline(sectionStream, lineStr, '!');
-            world.updateBoxesFromString(lineStr);
-          ;
-          break;
-          case 'L':
-            getline(sectionStream, lineStr, '!');
-            world.updateLightsFromString(lineStr);
-          ;
-          break;
-          default:
-          ;
-          }
-        }
+        running = world.loadNextState(file);
       }
       world.Step(timeStep);
       world.paused = true;
     }
-    return 0;
+    return 0; // Finished reading the file, close
   }
 
-  // Testing output files
   if (outputFileName != "")
     world.saveWorldHeader(outputFileName);
 
-  // Read the polygon from the input file
-  std::ifstream infile(pFileName);
-  std::string line;
-  while (std::getline(infile, line))
+  // Read the polygon from the input file if we have one
+  if (pFileName != "")
   {
-    std::istringstream vertPair(line);
-    double x, y;
-    if (!(vertPair >> x >> y)) { break; } // error
-    world.polygon.addVertex(x, y);
-  }
-
-  if (world.polygon.vertices.size() < 3 && pFileName != "")
-  {
-    printf("The input file was invalid or did not define a polygon\n.");
-    exit(0);
-  }
-  
-  if (world.polygon.vertices.size() > 2)
-  {
-    // Used throughout to detect if we are in the circle or poly case
-    world.havePolygon = true;
+    std::ifstream infile(pFileName);
+    if (!world.loadPolygonFromFile(infile))
+    {
+      printf("The input file was invalid or did not define a polygon\n.");
+      exit(0);
+    }
   }
 
   // These lines translate the polygon such that its 
@@ -375,6 +331,9 @@ int main(int argc, char *argv[])
     world.polygon.translate((WIDTH-1)/2.0, (HEIGHT-1)/2.0, true);
   }
 
+
+  // Various declarations for main loop
+  
   double delta = 0.6;
   double sdelta = 0.95;
   double xdelta = 0;
@@ -394,6 +353,7 @@ int main(int argc, char *argv[])
 
   // Default is 5
   // We should set the RAD-Min intelligently
+  // by matching the desired area (implicitly defined)
   double boxArea;
   if (box_type == Box::SHAPE_RECT)
     boxArea = box_size*box_size;
@@ -427,9 +387,8 @@ int main(int argc, char *argv[])
   double RADMIN = world.GetRadMin(BOXES, boxArea, robot_size, world.polygon);
 
   // Can stop the holding behaviour by setting this to false
+  // holdFor is set automatically below; it should be 0 here to begin
   bool holdAtMin = true;
-
-  // Initialization
   int holdFor = 0;
 
   /* Loop until the user closes the window */

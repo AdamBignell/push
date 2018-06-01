@@ -375,3 +375,67 @@ void World::updateLightsFromString(std::string &lightStr)
     SetLightIntensity(index, intensity);
   }
 }
+
+// Given an already opened file, reads in the next state
+bool World::loadNextState(std::ifstream& file)
+{
+  std::string sectionStr;
+  std::string lineStr;
+  bool running = getline(file, sectionStr, '$'); // WorldStates
+
+  std::istringstream sectionStream(sectionStr);
+  while(getline(sectionStream, lineStr, '!')) // Sections
+  {
+    char section = lineStr.c_str()[1]; // ignore the newline
+    switch (section)
+    {
+    case 'H':
+      // This shouldn't happen. Just dump the options
+      getline(sectionStream, lineStr, '!');
+    break;
+    case 'R':
+      getline(sectionStream, lineStr, '!');
+      updateRobotsFromString(lineStr);
+    ;
+    break;
+    case 'B':
+      getline(sectionStream, lineStr, '!');
+      updateBoxesFromString(lineStr);
+    ;
+    break;
+    case 'L':
+      getline(sectionStream, lineStr, '!');
+      updateLightsFromString(lineStr);
+    ;
+    break;
+    default:
+    ;
+    }
+  }
+  return running;
+}
+
+bool World::loadPolygonFromFile(std::ifstream& infile)
+{
+  std::string line;
+  while (std::getline(infile, line))
+  {
+    std::istringstream vertPair(line);
+    double x, y;
+    if (!(vertPair >> x >> y)) { break; } // error
+    polygon.addVertex(x, y);
+  }
+
+  if (polygon.vertices.size() < 3)
+  {
+    // Invalid polygon
+    return false;
+  }
+  
+  if (polygon.vertices.size() > 2)
+  {
+    // Used throughout to detect if we are in the circle or poly case
+    havePolygon = true;
+    return true;
+  }
+}
