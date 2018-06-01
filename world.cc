@@ -262,7 +262,7 @@ double World::GetSetRadMax(Polygon& tempPoly){
 void World::saveWorldHeader(std::string saveFileName)
 {
   std::ofstream outfile;
-  outfile.open(saveFileName, std::ios_base::app);
+  outfile.open(saveFileName);
 
   outfile << "HEADER:\n";
   outfile << "-w " << width << " -h " << height;
