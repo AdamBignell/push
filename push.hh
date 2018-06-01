@@ -72,6 +72,10 @@ public:
 
   // The average distance between the vertices and a point
   double getAvgDistFromPoint(double x, double y);
+
+  // Skew the corners so that you end up with the right shape
+  // This attempts to fix the 'rounded square' effect
+  void primeCorners();
 };
 
 class Robot;

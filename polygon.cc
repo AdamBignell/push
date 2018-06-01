@@ -183,3 +183,61 @@ double Polygon::getAvgDistFromPoint(double x, double y)
     }
     return totalDist/vertices.size();
 }
+
+void Polygon::primeCorners()
+{
+    Vertex ab(0,0), cb(0,0);
+    int next, prev;
+    double dot, cross, alpha, angle, scale;
+    std::vector<Vertex> vertCopy(vertices); // Need to use the unchanges state
+    std::vector<Vertex> newVerts;
+
+    double scales[vertCopy.size()];
+
+    for (int i = 0; i < vertCopy.size(); ++i)
+    {
+        // Calculate angle
+        // Points A, B, C => i-1, i, i+1
+        next = (i+1) % vertCopy.size();
+        prev = (i-1) % vertCopy.size();
+
+        ab.x = vertCopy[i].x - vertCopy[prev].x;
+        ab.y = vertCopy[i].y - vertCopy[prev].y;
+
+        cb.x = vertCopy[i].x - vertCopy[next].x;
+        cb.y = vertCopy[i].y - vertCopy[next].y;
+
+        dot = (ab.x * cb.x + ab.y * cb.y); // dot product
+        cross = (ab.x * cb.y - ab.y * cb.x); // cross product
+
+        alpha = atan2(cross, dot);
+        angle = fabs(floor(alpha * 180. / M_PI + 0.5));
+        
+        scale = 1/(angle/157.5); //  Gives f(90) = 2, f(180) = 1
+        if (scale < 1)
+            scale = 1;
+
+        // Calculate new vertices as inbetween points
+        Vertex aPrime((vertCopy[next].x + vertCopy[i].x) / 2, (vertCopy[next].y + vertCopy[i].y) / 2);
+        // Note that if we let each vertex handle only the next, eventually we loop back to the beginning
+        // Vertex cPrime((vertCopy[prev].x + vertCopy[i].x) / 2, (vertCopy[prev].y + vertCopy[i].y) / 2);
+
+        newVerts.push_back(aPrime);
+        // Save the scale. Note that we need to insert all
+        // the new evrtices first otherwise we will be calculating
+        // their positions using the wrong values
+        scales[i] = scale;       
+    }
+
+    for (int i=0; i < newVerts.size(); ++i)
+    {
+        vertices.insert(vertices.begin() + (2*i + 1) % (vertices.size()), newVerts[i]);
+        //vertices.insert(vertices.begin() + prev, cPrime);
+    }
+
+    for (int i=0; i < vertCopy.size(); ++i)
+    {
+        vertices[(2*i) + 1].x *= scales[i];
+        vertices[(2*i) + 1].y *= scales[i];
+    }
+}

@@ -320,10 +320,13 @@ int main(int argc, char *argv[])
     }
   }
 
-  // These lines translate the polygon such that its 
-  // centroid is at the origin (0,0)
+  // These lines prime the polygon
   if (world.havePolygon)
   {
+    // Adjust the polygon to account for corners
+    // world.polygon.primeCorners();
+
+    // Make the centroid the origin
     Vertex centroid = world.polygon.getCentroid();
     world.polygon.translate(-1*centroid.x, -1*centroid.y, false);
 
@@ -385,6 +388,17 @@ int main(int argc, char *argv[])
   }
 
   double RADMIN = world.GetRadMin(BOXES, boxArea, robot_size, world.polygon);
+
+  // These lines prime the polygon
+  if (world.havePolygon)
+  {
+    // Adjust the polygon to account for corners
+    // Note that we need to be centered around the origin
+    // hence the double translate
+    world.polygon.translate(-(WIDTH-1)/2.0, -(HEIGHT-1)/2.0, true);
+    world.polygon.primeCorners();
+    world.polygon.translate((WIDTH-1)/2.0, (HEIGHT-1)/2.0, true);
+  }
 
   // Can stop the holding behaviour by setting this to false
   // holdFor is set automatically below; it should be 0 here to begin
