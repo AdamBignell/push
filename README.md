@@ -30,10 +30,27 @@ Otherwise, you may specify the following options:
 | -t | Robot shape | R = Rectangular, C = Circular |
 | -y | Box shape | R = Rectangular, C = Circular, H = Hexagonal |
 | -p | Path to polygon file | String |
+| -g | How often to render the arena | Integer|
+| -o | Output file name, saves a replay | String|
+| -i | Input file name, loads a replay | String|
 
 A typical run command:
 
 ```./push -r 60 -b 200 -s 0.6 -z 0.7 -t C -y H -p shapes/square.txt```
+
+A typical output command:
+
+```./push -r 60 -b 200 -s 0.6 -z 0.7 -t C -y H -g 50 -o myReplay.txt```
+
+A typical load command:
+
+```./push -i myReplay.txt```
+
+Note that (all other command-line arguments are overwritten by the input file header if an input file is specified).
+
+If an output filename doesn't exist yet, it is created. Otherwise, it is overwritten. While the output file is human-readable, it should not be edited by hand. The header information is assumed to be reliable, and the positions/quantity of the robots and boxes are taken to be valid.
+
+It is highly recommended that replays are saved with `-g >= 50` or so. Saving *every* state of the world (e.g. `-g = 1`) will result in a very large textfile. The intention is that replays will capture the most important information of a costly run: Although an expensive set-up (say, thousands of robots and thousands of boxes) may run very slowly, the replay will run comparatively much faster, as the only computations are the loads from the file, and not e.g. the physics of the world. As well, with sparse GUI rendering (the `-g >> 1` case), the world will jump from state to state, explicitly placing the objects wherever they need to be, saving all of the in-between calculations of the physics.
 
 ## Polygon Files
 A description of a [simple polygon](https://en.wikipedia.org/wiki/Simple_polygon)'s vertices.
