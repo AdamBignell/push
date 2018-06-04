@@ -199,7 +199,8 @@ void Polygon::primeCorners()
         // Calculate angle
         // Points A, B, C => i-1, i, i+1
         next = (i+1) % vertCopy.size();
-        prev = (i-1) % vertCopy.size();
+        // Not sure why but negative integers for mod give odd behaviour
+        prev = (vertCopy.size()-1 + i) % vertCopy.size();
 
         ab.x = vertCopy[i].x - vertCopy[prev].x;
         ab.y = vertCopy[i].y - vertCopy[prev].y;
@@ -213,7 +214,7 @@ void Polygon::primeCorners()
         alpha = atan2(cross, dot);
         angle = fabs(floor(alpha * 180. / M_PI + 0.5));
         
-        scale = 1/(angle/157.5); //  Gives f(90) = 2, f(180) = 1
+        scale = 1/(angle/135); //  Gives f(90) = 2, f(180) = 1
         if (scale < 1)
             scale = 1;
 

@@ -246,7 +246,8 @@ double World::GetSetRadMax(Polygon& tempPoly){
     double arenaArea = width*height;
     double testScale = 1.05;
     double area = tempPoly.getArea();
-    while (area < arenaArea) // Can we do this loop algebraically?
+    // Can we do this loop algebraically?
+    while (area < arenaArea*1.50) // Want to be sufficiently wide
     {
       tempPoly.scale(testScale);
       area *= testScale*testScale;
