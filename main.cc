@@ -265,9 +265,6 @@ int main(int argc, char *argv[])
       optindex = 0;
     }
       break;
-    case 'x':
-      useGui = false;
-      break;
     default:
       printf("unhandled option %c\n", ch);
       //puts( USAGE );
