@@ -99,6 +99,10 @@ public:
 
   bool havePolygon;
 
+  // Just for convenience
+  // Doesn't make sense to pause a non-gui world
+  static bool paused;
+
   size_t steps;
   std::vector<Light *> lights;
   std::vector<Box *> boxes;
@@ -114,6 +118,9 @@ public:
   // set the intensity of the light at @index. If @index is out of
   // range, the call has no effect
   virtual void SetLightIntensity(size_t index, double intensity);
+
+  // Just for convenience. Doesn't make sense to shut-down a non-gui-world
+  virtual bool RequestShutdown() { return false; };
 
   // Pull the next world state from the file
   bool loadNextState(std::ifstream& file);
@@ -131,7 +138,7 @@ public:
   double GetLightIntensityAt(double x, double y);
 
   // perform one simulation step
-  void Step(double timestep);
+  virtual void Step(double timestep);
 
   // Get the minimum contracted size
   // Use total box area to estimate
@@ -153,7 +160,7 @@ public:
 class GuiWorld : public World
 {
 public:
-  static bool paused;
+  //static bool paused;
   static bool step;
   static int skip;
 

@@ -130,6 +130,7 @@ int main(int argc, char *argv[])
   Pusher::robot_shape_t robot_type = Pusher::SHAPE_RECT;
   Box::box_shape_t box_type = Box::SHAPE_RECT;
   int GUITIME = 1;
+  bool useGui = true;
 
   // This is the file holding the polygon vertices
   // and the output file of the execution
@@ -155,6 +156,22 @@ int main(int argc, char *argv[])
   char firstChar;
   char optArgProxy[50];
   std::vector<std::string> tokens;
+  for (int i = 0; i < argc ; ++i)
+  {
+    if (strcmp(argv[i], "-x") == 0)
+    {
+      useGui = false;
+      argv[i] = NULL;
+      //
+      if (i < argc-1)
+      {
+        if (argv[i+1][0] != '-')
+          argv[i+1] = NULL;
+          argc--;
+      }
+      argc--;
+    }
+  }
   while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y:p:g:o:i:", longopts, &optindex)) != -1 || optindex < tokens.size())
   {
     if (argv)
@@ -248,6 +265,9 @@ int main(int argc, char *argv[])
       optindex = 0;
     }
       break;
+    case 'x':
+      useGui = false;
+      break;
     default:
       printf("unhandled option %c\n", ch);
       //puts( USAGE );
@@ -255,11 +275,17 @@ int main(int argc, char *argv[])
     }
   }
 
-  GuiWorld world(WIDTH, HEIGHT, GUITIME, LIGHTS);
+  World* world = NULL;
+  if (useGui)
+  {
+    world = new GuiWorld(WIDTH, HEIGHT, GUITIME, LIGHTS);
+  }
+  else
+    world = new World(WIDTH, HEIGHT, GUITIME, LIGHTS);
 
   // Create objects
   for (int i = 0; i < BOXES; i++)
-    world.AddBox(new Box(world, box_type, box_size,
+    world->AddBox(new Box(*world, box_type, box_size,
                          WIDTH / 4.0 + drand48() * WIDTH * 0.5,
                          HEIGHT / 4.0 + drand48() * HEIGHT * 0.5,
                          drand48() * M_PI));
@@ -275,12 +301,12 @@ int main(int argc, char *argv[])
       y = drand48() * HEIGHT;
     }
 
-    world.AddRobot(new Pusher(world, robot_type, robot_size, x, y, drand48() * M_PI));
+    world->AddRobot(new Pusher(*world, robot_type, robot_size, x, y, drand48() * M_PI));
   }
 
   // fill the world with a grid of lights, all off
   // (width, height, height above arena, brightness)
-  world.AddLightGrid(sqrt(LIGHTS), sqrt(LIGHTS), 2.0, 0.0);
+  world->AddLightGrid(sqrt(LIGHTS), sqrt(LIGHTS), 2.0, 0.0);
 
   // This is used in both while loops to
   // display the world states more cleanly
@@ -292,28 +318,28 @@ int main(int argc, char *argv[])
   if (inputFileName != "")
   {
     // It doesn't make sense to skip frames here
-    world.draw_interval = 1;
+    world->draw_interval = 1;
     std::ifstream file(inputFileName);
-    while (!world.RequestShutdown() && running)
+    while (!world->RequestShutdown() && running)
     {
-      if (world.steps % updateRate == 1) // every now and again
+      if (world->steps % updateRate == 1) // every now and again
       {
-        running = world.loadNextState(file);
+        running = world->loadNextState(file);
       }
-      world.Step(timeStep);
-      world.paused = true;
+      world->Step(timeStep);
+      world->paused = true;
     }
     return 0; // Finished reading the file, close
   }
 
   if (outputFileName != "")
-    world.saveWorldHeader(outputFileName);
+    world->saveWorldHeader(outputFileName);
 
   // Read the polygon from the input file if we have one
   if (pFileName != "")
   {
     std::ifstream infile(pFileName);
-    if (!world.loadPolygonFromFile(infile))
+    if (!world->loadPolygonFromFile(infile))
     {
       printf("The input file was invalid or did not define a polygon\n.");
       exit(0);
@@ -321,17 +347,17 @@ int main(int argc, char *argv[])
   }
 
   // These lines prime the polygon
-  if (world.havePolygon)
+  if (world->havePolygon)
   {
     // Adjust the polygon to account for corners
-    // world.polygon.primeCorners();
+    // world->polygon.primeCorners();
 
     // Make the centroid the origin
-    Vertex centroid = world.polygon.getCentroid();
-    world.polygon.translate(-1*centroid.x, -1*centroid.y, false);
+    Vertex centroid = world->polygon.getCentroid();
+    world->polygon.translate(-1*centroid.x, -1*centroid.y, false);
 
     // Move the polygon into the arena's coordinate system, with (0,0) in the bottom left
-    world.polygon.translate((WIDTH-1)/2.0, (HEIGHT-1)/2.0, true);
+    world->polygon.translate((WIDTH-1)/2.0, (HEIGHT-1)/2.0, true);
   }
 
 
@@ -381,23 +407,23 @@ int main(int argc, char *argv[])
   // intuitive to use area directly, but doing so would require
   // many more calculations. Keep in mind there are alternatives.
   double radius = RADMAX;
-  if (world.havePolygon)
+  if (world->havePolygon)
   {
-    RADMAX = world.GetSetRadMax(world.polygon);
-    radius = world.polygon.getDistFromPoint(goalx, goaly);
+    RADMAX = world->GetSetRadMax(world->polygon);
+    radius = world->polygon.getDistFromPoint(goalx, goaly);
   }
 
-  double RADMIN = world.GetRadMin(BOXES, boxArea, robot_size, world.polygon);
+  double RADMIN = world->GetRadMin(BOXES, boxArea, robot_size, world->polygon);
 
   // These lines prime the polygon
-  if (world.havePolygon)
+  if (world->havePolygon)
   {
     // Adjust the polygon to account for corners
     // Note that we need to be centered around the origin
     // hence the double translate
-    world.polygon.translate(-(WIDTH-1)/2.0, -(HEIGHT-1)/2.0, true);
-    world.polygon.primeCorners();
-    world.polygon.translate((WIDTH-1)/2.0, (HEIGHT-1)/2.0, true);
+    world->polygon.translate(-(WIDTH-1)/2.0, -(HEIGHT-1)/2.0, true);
+    world->polygon.primeCorners();
+    world->polygon.translate((WIDTH-1)/2.0, (HEIGHT-1)/2.0, true);
   }
 
   // Can stop the holding behaviour by setting this to false
@@ -409,19 +435,19 @@ int main(int argc, char *argv[])
   // Note that for irregular polygons we define the radius as the shortest distance
   // to any point on the polygon
   int writeState = GUITIME;
-  while (!world.RequestShutdown() && world.steps < maxsteps)
+  while (!world->RequestShutdown() && world->steps < maxsteps)
   {
-    if (world.steps % updateRate == 1) // every now and again
+    if (world->steps % updateRate == 1) // every now and again
     {
       if (holdFor != 0 && holdAtMin)
       {
         holdFor--;
-        world.UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH);
+        world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH);
         if (holdFor == 0)
         {
-          if (world.havePolygon)
+          if (world->havePolygon)
           {
-            world.polygon.scale(sdelta);
+            world->polygon.scale(sdelta);
             while(radius < RADMIN)
               radius *= sdelta; // Get us above the threshold to grow
           }
@@ -454,22 +480,22 @@ int main(int argc, char *argv[])
         {
           // Turns all necessary lights on for a specific amount of contraction (radius)
           // The polygon will automatically be used if it is well defined
-          world.UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH);
+          world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH);
         }
 #if 0
               for( int i=0; i<18; i+=2 )
                 {
                   size_t index = letterL[i] + letterL[i+1] * lside;      
-                  world.SetLightIntensity( index, 1 );       
+                  world->SetLightIntensity( index, 1 );       
                 }
 #endif
 
         // This handles both contractions and dilation
         if (holdFor == 0) // If we aren't staying contracted
         {
-          if (world.havePolygon)
+          if (world->havePolygon)
           {
-            world.polygon.scale(sdelta);
+            world->polygon.scale(sdelta);
             radius *= sdelta;
           }
           else
@@ -484,14 +510,14 @@ int main(int argc, char *argv[])
 
     if (--writeState == 0)
     {
-      world.appendWorldStateToFile(outputFileName);
+      world->appendWorldStateToFile(outputFileName);
       writeState = GUITIME;
     }
 
-    world.Step(timeStep);
+    world->Step(timeStep);
   }
 
-  printf("Completed %lu steps.", world.steps);
+  printf("Completed %lu steps.", world->steps);
 
   return 0;
 }
