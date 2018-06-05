@@ -33,6 +33,7 @@ Otherwise, you may specify the following options:
 | -g | How often to render the arena | Integer|
 | -o | Output file name, saves a replay | String|
 | -i | Input file name, loads a replay | String|
+| -x | Run without GUI | No Argument |
 
 A typical run command:
 
