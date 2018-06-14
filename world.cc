@@ -270,7 +270,7 @@ void World::saveWorldHeader(std::string saveFileName)
   outfile << " -r " << robots.size() << " -b " << boxes.size();
   outfile << " -z " << robots[0]->size << " -s " << boxes[0]->size;
   outfile << " -t " << robots[0]->cshape << " -y " << boxes[0]->cshape;
-  outfile << " -g " << draw_interval << '\n';
+  outfile << " -g " << " 1 " << '\n';
   outfile << "$\n";
 }
 

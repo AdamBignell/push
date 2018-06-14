@@ -156,6 +156,7 @@ int main(int argc, char *argv[])
   char firstChar;
   char optArgProxy[50];
   std::vector<std::string> tokens;
+  // Catch the argument-less option
   for (int i = 0; i < argc ; ++i)
   {
     if (strcmp(argv[i], "-x") == 0)
@@ -172,6 +173,7 @@ int main(int argc, char *argv[])
       argc--;
     }
   }
+  // Parse all other options
   while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y:p:g:o:i:", longopts, &optindex)) != -1 || optindex < tokens.size())
   {
     if (argv)
@@ -278,7 +280,10 @@ int main(int argc, char *argv[])
     world = new GuiWorld(WIDTH, HEIGHT, GUITIME, LIGHTS);
   }
   else
+  {
     world = new World(WIDTH, HEIGHT, GUITIME, LIGHTS);
+    fprintf(stderr, "\nRunning");
+  }
 
   // Create objects
   for (int i = 0; i < BOXES; i++)
@@ -436,6 +441,8 @@ int main(int argc, char *argv[])
   {
     if (world->steps % updateRate == 1) // every now and again
     {
+      if (!useGui && (world->steps % (updateRate*20) == 1))
+        fprintf(stderr, ".");
       if (holdFor != 0 && holdAtMin)
       {
         holdFor--;
