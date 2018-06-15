@@ -214,7 +214,7 @@ void Polygon::primeCorners()
         alpha = atan2(cross, dot);
         angle = fabs(floor(alpha * 180. / M_PI + 0.5));
         
-        scale = 1/(angle/135); //  Gives f(90) = 2, f(180) = 1
+        scale = 1/(angle/157.5); //  Gives f(90) = 1.75, f(180) = 1
         if (scale < 1)
             scale = 1;
 

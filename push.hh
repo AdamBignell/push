@@ -89,7 +89,8 @@ public:
   //b2dJson jsonWorld;
   std::string worldString;
 
-  double width, height, numLights;
+  double width, height;
+  int numLights;
   int draw_interval;
 
   b2Body *boxWall[4];
@@ -108,7 +109,7 @@ public:
   std::vector<Box *> boxes;
   std::vector<Robot *> robots;
 
-  World(double width, double height, double numLights, int drawInterval);
+  World(double width, double height, int numLights, int drawInterval);
 
   virtual void AddRobot(Robot *robot);
   virtual void AddBox(Box *box);
@@ -169,7 +170,7 @@ public:
 
   GLFWwindow *window;
 
-  GuiWorld(double width, double height, int draw_interval, double numLights);
+  GuiWorld(double width, double height, int draw_interval, int numLights);
   ~GuiWorld();
 
   virtual void Step(double timestep);

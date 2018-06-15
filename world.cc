@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 
-World::World(double width, double height, double numLights, int drawInterval) : steps(0),
+World::World(double width, double height, int numLights, int drawInterval) : steps(0),
                                                               width(width),
                                                               height(height),
                                                               numLights(numLights),
@@ -96,7 +96,7 @@ void World::SetLightIntensity(size_t index, double intensity)
 
 void World::UpdateLightPattern(double goalx, double goaly, double probOn, double radius, double PATTWIDTH)
 {
-  double lside = sqrt(numLights); // Questionable
+  double lside = sqrt(lights.size());
   double lx = width / lside;
   double ly = height / lside;
   double r2 = radius * radius;
@@ -270,7 +270,7 @@ void World::saveWorldHeader(std::string saveFileName)
   outfile << " -r " << robots.size() << " -b " << boxes.size();
   outfile << " -z " << robots[0]->size << " -s " << boxes[0]->size;
   outfile << " -t " << robots[0]->cshape << " -y " << boxes[0]->cshape;
-  outfile << " -g " << " 1 " << '\n';
+  outfile << " -g " << "1" << '\n';
   outfile << "$\n";
 }
 
