@@ -162,15 +162,22 @@ int main(int argc, char *argv[])
     if (strcmp(argv[i], "-x") == 0)
     {
       useGui = false;
-      argv[i] = NULL;
+      //argv[i] = NULL;
       //
       if (i < argc-1)
       {
         if (argv[i+1][0] != '-')
+        {
           argv[i+1] = NULL;
           argc--;
+        }
       }
       argc--;
+      // This allows us to accept the argumentless -x flag
+      for (;i < argc;i++)
+      {
+        strcpy(argv[i], argv[i+1]);
+      }
     }
   }
   // Parse all other options
