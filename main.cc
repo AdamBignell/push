@@ -119,11 +119,11 @@ const double Pusher::maxspeeda = M_PI / 2.0;
 
 int main(int argc, char *argv[])
 {
-  double WIDTH = 32;
-  double HEIGHT = 32;
+  double WIDTH = 64;
+  double HEIGHT = 64;
   size_t ROBOTS = 128;
   size_t BOXES = 512;
-  size_t LIGHTS = 32 * 32;
+  size_t LIGHTS = WIDTH * HEIGHT;
   double timeStep = 1.0 / 30.0;
   double robot_size = 0.35;
   double box_size = 0.25;
@@ -281,6 +281,9 @@ int main(int argc, char *argv[])
     }
   }
 
+  // Reset the number of lights in case width and height changed
+  LIGHTS = WIDTH * HEIGHT;
+
   World* world = NULL;
   if (useGui)
   {
@@ -293,10 +296,18 @@ int main(int argc, char *argv[])
   }
 
   // Create objects
+  // Zoomed In
+  // for (int i = 0; i < BOXES; i++)
+  //   world->AddBox(new Box(*world, box_type, box_size,
+  //                        WIDTH / 4.0 + drand48() * WIDTH * 0.5,
+  //                        HEIGHT / 4.0 + drand48() * HEIGHT * 0.5,
+  //                        drand48() * M_PI));
+
+  // Zoomed Out
   for (int i = 0; i < BOXES; i++)
     world->AddBox(new Box(*world, box_type, box_size,
-                         WIDTH / 4.0 + drand48() * WIDTH * 0.5,
-                         HEIGHT / 4.0 + drand48() * HEIGHT * 0.5,
+                         WIDTH * (3/8.0) + drand48() * WIDTH * 0.25,
+                         HEIGHT * (3/8.0) + drand48() * HEIGHT * 0.25,
                          drand48() * M_PI));
 
   for (int i = 0; i < ROBOTS; i++)
@@ -304,10 +315,22 @@ int main(int argc, char *argv[])
     double x = WIDTH / 2.0;
     double y = HEIGHT / 2.0;
 
-    while (x > WIDTH * 0.2 && x < WIDTH * 0.8 && y > HEIGHT * 0.2 && y < HEIGHT * 0.8)
+    // Zoomed In
+    // while (x > WIDTH * 0.2 && x < WIDTH * 0.8 && y > HEIGHT * 0.2 && y < HEIGHT * 0.8)
+    // {
+    //   x = drand48() * WIDTH;
+    //   y = drand48() * HEIGHT;
+    // }
+
+    //Zoomed Out
+    double lhBoxBound = WIDTH * 3/8.0;
+    double rhBoxBound= WIDTH - lhBoxBound;
+    double bottomBoxBound = HEIGHT * 3/8.0;
+    double topBoxBound = HEIGHT - bottomBoxBound;
+    while ((x > lhBoxBound && x < rhBoxBound && y > bottomBoxBound && y < topBoxBound))
     {
-      x = drand48() * WIDTH;
-      y = drand48() * HEIGHT;
+      x = drand48() * (WIDTH * 4/8.0) + (WIDTH * 2/8.0);
+      y = drand48() * (HEIGHT * 4/8.0) + (HEIGHT * 2/8.0);
     }
 
     world->AddRobot(new Pusher(*world, robot_type, robot_size, x, y, drand48() * M_PI));
@@ -383,11 +406,11 @@ int main(int argc, char *argv[])
 
   // The thickness of the contracting pattern
   // No real intelligence here, but wider bands are a little more unwieldy
-  double PATTWIDTH = fmax(lx,ly)/2; 
+  double PATTWIDTH = fmax(lx,ly)/10; 
 
   // Note that we don't want the center of the
   // ring perimeter to actually hit the wall.
-  double RADMAX = (WIDTH / 2.0);
+  double RADMAX = (WIDTH / 2.0) * (0.75);
 
   // Default is 5
   // We should set the RAD-Min intelligently
@@ -418,7 +441,7 @@ int main(int argc, char *argv[])
   double radius = RADMAX;
   if (world->havePolygon)
   {
-    RADMAX = world->GetSetRadMax(world->polygon);
+    RADMAX = world->GetSetRadMax(world->polygon) * (0.5);
     radius = world->polygon.getDistFromPoint(goalx, goaly);
   }
 

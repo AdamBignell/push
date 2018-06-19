@@ -16,7 +16,9 @@ World::World(double width, double height, int numLights, int drawInterval) : ste
   //set interior box container
   b2BodyDef boxWallDef;
   b2PolygonShape groundBox;
-  groundBox.SetAsBox(width / 4.0, 0.01f);
+
+  //groundBox.SetAsBox(width / 4.0, 0.01f); // Zoomed in
+  groundBox.SetAsBox(width / 8.0, 0.01f); // Zoomed Out
 
   b2FixtureDef fixtureDef;
   fixtureDef.shape = &groundBox;
@@ -31,10 +33,17 @@ World::World(double width, double height, int numLights, int drawInterval) : ste
     boxWall[i]->CreateFixture(&fixtureDef);
   }
 
-  boxWall[0]->SetTransform(b2Vec2(width / 2, height / 4.0), 0);
-  boxWall[1]->SetTransform(b2Vec2(width / 2, height - height / 4.0), 0);
-  boxWall[2]->SetTransform(b2Vec2(width / 4.0, height / 2), M_PI / 2.0);
-  boxWall[3]->SetTransform(b2Vec2(width - width / 4.0, height - height / 2.0), M_PI / 2.0);
+  // Zoomed in
+  // boxWall[0]->SetTransform(b2Vec2(width / 2, height / 4.0), 0);
+  // boxWall[1]->SetTransform(b2Vec2(width / 2, height - height / 4.0), 0);
+  // boxWall[2]->SetTransform(b2Vec2(width / 4.0, height / 2), M_PI / 2.0);
+  // boxWall[3]->SetTransform(b2Vec2(width - width / 4.0, height - height / 2.0), M_PI / 2.0);
+
+  // Zoomed Out
+  boxWall[0]->SetTransform(b2Vec2(width / 2, height * (3/8.0)), 0);
+  boxWall[1]->SetTransform(b2Vec2(width / 2, height - (height * (3/8.0))), 0);
+  boxWall[2]->SetTransform(b2Vec2(width * (3/8.0), height / 2), M_PI / 2.0);
+  boxWall[3]->SetTransform(b2Vec2(width - (width * (3/8.0)), height - height / 2.0), M_PI / 2.0);
 
   // set exterior box container
   b2BodyDef boxWallDef1;

@@ -219,32 +219,38 @@ void Polygon::primeCorners()
             scale = 1;
 
         // Calculate new vertices as inbetween points
-        //Vertex aPrime((vertCopy[next].x + vertCopy[i].x) / 2, (vertCopy[next].y + vertCopy[i].y) / 2);
+        Vertex aPrime((vertCopy[next].x + vertCopy[i].x) / 2, (vertCopy[next].y + vertCopy[i].y) / 2);
         // Note that if we let each vertex handle only the next, eventually we loop back to the beginning
         // Vertex cPrime((vertCopy[prev].x + vertCopy[i].x) / 2, (vertCopy[prev].y + vertCopy[i].y) / 2);
 
-        // Quarter location attempt
-        Vertex aPrime(vertCopy[i].x + ((vertCopy[next].x - vertCopy[i].x) / 4), vertCopy[i].y + ((vertCopy[next].y - vertCopy[i].y) / 4));
-        Vertex cPrime(vertCopy[i].x + ((vertCopy[prev].x - vertCopy[i].x) / 4), vertCopy[i].y + ((vertCopy[prev].y - vertCopy[i].y) / 4));
+        // Quarter location attempt - Not that good
+        // Vertex aPrime(vertCopy[i].x + ((vertCopy[next].x - vertCopy[i].x) / 4), vertCopy[i].y + ((vertCopy[next].y - vertCopy[i].y) / 4));
+        // Vertex aHalfPrime((vertCopy[next].x + vertCopy[i].x) / 2, (vertCopy[next].y + vertCopy[i].y) / 2);
+        // Vertex cPrime(vertCopy[i].x + ((vertCopy[prev].x - vertCopy[i].x) / 4), vertCopy[i].y + ((vertCopy[prev].y - vertCopy[i].y) / 4));
 
+        //newVerts.push_back(cPrime);
+        newVerts.push_back(vertCopy[i]); // See note below **
         newVerts.push_back(aPrime);
-        newVerts.push_back(cPrime);
+        //newVerts.push_back(aHalfPrime);
+        
         // Save the scale. Note that we need to insert all
         // the new vertices first otherwise we will be calculating
         // their positions using the wrong values
-        scales[i] = scale;       
+        scales[i] = scale;
     }
 
-    for (int i=0; i < newVerts.size()/2; ++i)
+    // **The logic to insert the new vertices kind of sucks
+    // It's alot easier to construct as we go.
+    vertices.clear();
+
+    for (int i=0; i < newVerts.size(); ++i)
     {
-        vertices.insert(vertices.begin() + (3*i - 1) % (vertices.size()), newVerts[2*i]);
-        vertices.insert(vertices.begin() + (3*i + 1) % (vertices.size()), newVerts[(2*i)+1]);
-        //vertices.insert(vertices.begin() + prev, cPrime);
+        vertices.push_back(newVerts[i]);
     }
 
     for (int i=0; i < vertCopy.size(); ++i)
     {
-        vertices[(3*i) + 1].x *= scales[i];
-        vertices[(3*i) + 1].y *= scales[i];
+        vertices[2*i].x *= scales[i];
+        vertices[2*i].y *= scales[i];
     }
 }
