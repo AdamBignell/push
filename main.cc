@@ -127,6 +127,7 @@ int main(int argc, char *argv[])
   double timeStep = 1.0 / 30.0;
   double robot_size = 0.35;
   double box_size = 0.25;
+  double flare = -1.0;
   Pusher::robot_shape_t robot_type = Pusher::SHAPE_RECT;
   Box::box_shape_t box_type = Box::SHAPE_RECT;
   int GUITIME = 1;
@@ -149,6 +150,7 @@ int main(int argc, char *argv[])
       {"guitime", required_argument, NULL, 'g'},
       {"outputfile", required_argument, NULL, 'o'},
       {"inputfile", required_argument, NULL, 'i'},
+      {"flare", required_argument, NULL, 'f'},
       //  { "help",  optional_argument,   NULL,  'h' },
       {NULL, 0, NULL, 0}};
 
@@ -181,7 +183,7 @@ int main(int argc, char *argv[])
     }
   }
   // Parse all other options
-  while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y:p:g:o:i:", longopts, &optindex)) != -1 || optindex < tokens.size())
+  while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y:p:g:o:i:f:", longopts, &optindex)) != -1 || optindex < tokens.size())
   {
     if (argv)
       strcpy(optArgProxy, optarg);
@@ -274,6 +276,11 @@ int main(int argc, char *argv[])
       optindex = 0;
     }
       break;
+    case 'f':
+    {
+      flare = atof(optArgProxy);
+      break;
+    }
     default:
       printf("unhandled option %c\n", ch);
       //puts( USAGE );
@@ -441,20 +448,20 @@ int main(int argc, char *argv[])
   double radius = RADMAX;
   if (world->havePolygon)
   {
-    RADMAX = world->GetSetRadMax(world->polygon) * (0.5);
+    RADMAX = world->GetSetRadMax(world->polygon);
     radius = world->polygon.getDistFromPoint(goalx, goaly);
   }
 
   double RADMIN = world->GetRadMin(BOXES, boxArea, robot_size, world->polygon);
 
   // These lines prime the polygon
-  if (world->havePolygon)
+  if (world->havePolygon && flare > 0)
   {
     // Adjust the polygon to account for corners
     // Note that we need to be centered around the origin
     // hence the double translate
     world->polygon.translate(-(WIDTH-1)/2.0, -(HEIGHT-1)/2.0, true);
-    world->polygon.primeCorners();
+    world->polygon.primeCorners(flare);
     world->polygon.translate((WIDTH-1)/2.0, (HEIGHT-1)/2.0, true);
   }
 

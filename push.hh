@@ -75,7 +75,7 @@ public:
 
   // Skew the corners so that you end up with the right shape
   // This attempts to fix the 'rounded square' effect
-  void primeCorners();
+  void primeCorners(double flare);
 };
 
 class Robot;

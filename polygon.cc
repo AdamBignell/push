@@ -184,7 +184,7 @@ double Polygon::getAvgDistFromPoint(double x, double y)
     return totalDist/vertices.size();
 }
 
-void Polygon::primeCorners()
+void Polygon::primeCorners(double flare)
 {
     Vertex ab(0,0), cb(0,0);
     int next, prev;
@@ -214,7 +214,7 @@ void Polygon::primeCorners()
         alpha = atan2(cross, dot);
         angle = fabs(floor(alpha * 180. / M_PI + 0.5));
         
-        scale = 1/(angle/135); //  Gives f(90) = 1.75, f(180) = 1
+        scale = 1/(angle/(90 * flare)); //  Gives f(90) = 1.75, f(180) = 1
         if (scale < 1)
             scale = 1;
 

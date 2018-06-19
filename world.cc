@@ -252,11 +252,11 @@ double World::GetSetRadMax(Polygon& tempPoly){
   //TODO: This still feels buggy for user-defined polygons
   if (havePolygon)
   {
-    double arenaArea = width*height;
+    double arenaArea = (width*height)*(0.5);
     double testScale = 1.05;
     double area = tempPoly.getArea();
     // Can we do this loop algebraically?
-    while (area < arenaArea*1.50) // Want to be sufficiently wide
+    while (area < arenaArea) // Want to be sufficiently wide
     {
       tempPoly.scale(testScale);
       area *= testScale*testScale;
