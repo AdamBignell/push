@@ -34,6 +34,7 @@ Otherwise, you may specify the following options:
 | -o | Output file name, saves a replay | String|
 | -i | Input file name, loads a replay | String|
 | -x | Run without GUI | No Argument |
+| -f | Set flare of corners | Positive Float |
 
 A typical run command:
 
@@ -52,6 +53,8 @@ Note that (all other command-line arguments are overwritten by the input file he
 If an output filename doesn't exist yet, it is created. Otherwise, it is overwritten. While the output file is human-readable, it should not be edited by hand. The header information is assumed to be reliable, and the positions/quantity of the robots and boxes are taken to be valid.
 
 It is highly recommended that replays are saved with `-g >= 50` or so. Saving *every* state of the world (e.g. `-g = 1`) will result in a very large textfile. The intention is that replays will capture the most important information of a costly run: Although an expensive set-up (say, thousands of robots and thousands of boxes) may run very slowly, the replay will run comparatively much faster, as the only computations are the loads from the file, and not e.g. the physics of the world. As well, with sparse GUI rendering (the `-g >> 1` case), the world will jump from state to state, explicitly placing the objects wherever they need to be, saving all of the in-between calculations of the physics.
+
+The flare option refers to scaling of corner vertices. This accounts for the rounded corners often exhibited in squares and rectangles. By extending the corners out, we can achieve far sharper corners. The float value corresponds to the scaling factor if the corner is a 90 degree angle. Other corners will have a less dramatic scale if the angle is more than 90 degrees, and more dramatic scale if it is less. The calculation is: `scale = 1/(angle/(90 * flare))`
 
 ## Polygon Files
 A description of a [simple polygon](https://en.wikipedia.org/wiki/Simple_polygon)'s vertices.
