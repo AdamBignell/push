@@ -103,13 +103,15 @@ void World::SetLightIntensity(size_t index, double intensity)
     lights[index]->intensity = intensity;
 }
 
-void World::UpdateLightPattern(double goalx, double goaly, double probOn, double radius, double PATTWIDTH)
+void World::UpdateLightPattern(double goalx, double goaly, double probOn, double radius, double PATTWIDTH, double cornerRate)
 {
   double lside = sqrt(lights.size());
   double lx = width / lside;
   double ly = height / lside;
   double r2 = radius * radius;
   double randOn, cx, cy, c, c2;
+  double dist;
+  std::vector<std::tuple<double, int>> lightsOn;
   for (int x = 0; x < lside; x++)
     for (int y = 0; y < lside; y++)
     {
@@ -117,6 +119,19 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
       if (havePolygon) // Use the polygon
       {
         on = (fabs(polygon.getDistFromPoint(x, y) < fmax(fmax(lx,ly)/2,PATTWIDTH)));
+        // if (on) // TODO: Fix gradual off idea
+        // {
+        //   double minDist = width*height;
+        //   for (auto vertex: polygon.vertices)
+        //   {
+        //     // Use squared distance since we only care about order
+        //     dist = ((x - vertex.x) * (x - vertex.x)) + ((y - vertex.y) * (y - vertex.y));
+        //     if (dist < minDist)
+        //       minDist = dist;
+        //   }
+        //   std::tuple<double, int> lightTuple(minDist, x + y * lside);
+        //   lightsOn.push_back(lightTuple);
+        // }
       }
       else // Use the circle
       {
@@ -142,6 +157,17 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
                         on * (randOn <= probOn));
       // (fabs( c2 - r2 ) < lside) ); Old version: Why is this lside?
     }
+  
+  // TODO: Fix gradual off idea
+  // This lexicographically sorts the tuples by distance
+  // std::sort(lightsOn.begin(), lightsOn.end());
+  // int lightsTurnedOff = 0;
+  // int i = 0;
+  // while (lightsTurnedOff / lightsOn.size() < cornerRate || lightsTurnedOff / lightsOn.size() == 1)
+  // {
+  //   SetLightIntensity(std::get<1>(lightsOn[lightsTurnedOff]), 0);
+  //   lightsTurnedOff++;
+  // }
 }
 
 double World::GetLightIntensityAt(double x, double y)
@@ -391,7 +417,8 @@ bool World::loadNextState(std::ifstream& file)
 {
   std::string sectionStr;
   std::string lineStr;
-  bool running = getline(file, sectionStr, '$'); // WorldStates
+  bool running;
+  running = getline(file, sectionStr, '$'); // WorldStates
 
   std::istringstream sectionStream(sectionStr);
   while(getline(sectionStream, lineStr, '!')) // Sections

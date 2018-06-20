@@ -133,7 +133,10 @@ public:
   // probOn: How likely an 'on' is likely to actually be on. Useful for robot spacing
   // radius: Determines how contracted we are
   // pattwidth: The width of the contracting patten (note this isn't diameter)
-  void UpdateLightPattern(double goalx, double goaly, double probOn, double radius, double pattwidth);
+  // conrerRate: Sort of sophisticated. This defines the percentage of the total distance between the corner
+  //             and the midpoint to the next vertex that will be on. So if 1, there's no effect. If 0.5, the half of the
+  //             lights closer to the vertex will be turned off. We use a percentage to acount for arbitrary polygons
+  void UpdateLightPattern(double goalx, double goaly, double probOn, double radius, double pattwidth, double cornerRate);
 
   // return instantaneous light intensity from all sources
   double GetLightIntensityAt(double x, double y);

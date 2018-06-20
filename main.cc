@@ -483,7 +483,7 @@ int main(int argc, char *argv[])
       if (holdFor != 0 && holdAtMin)
       {
         holdFor--;
-        world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH);
+        world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH, 1 - (holdFor / (1000/updateRate)));
         if (holdFor == 0)
         {
           if (world->havePolygon)
@@ -531,7 +531,7 @@ int main(int argc, char *argv[])
           }
           // Turns all necessary lights on for a specific amount of contraction (radius)
           // The polygon will automatically be used if it is well defined
-          world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH);
+          world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH, 0);
         }
 #if 0
               for( int i=0; i<18; i+=2 )
