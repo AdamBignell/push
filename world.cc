@@ -417,8 +417,11 @@ bool World::loadNextState(std::ifstream& file)
 {
   std::string sectionStr;
   std::string lineStr;
-  bool running;
-  running = getline(file, sectionStr, '$'); // WorldStates
+  bool running = false;
+  if(getline(file, sectionStr, '$')) // WorldStates
+  {
+    running = true;
+  }
 
   std::istringstream sectionStream(sectionStr);
   while(getline(sectionStream, lineStr, '!')) // Sections
