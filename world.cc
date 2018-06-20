@@ -228,7 +228,7 @@ double World::GetRadMin(double numBoxes, double boxArea, double robot_size, Poly
 {
   //TODO: This still feels buggy for user-defined polygons
   double totalBoxArea = numBoxes * boxArea;
-  double testScale = 0.95;
+  double testScale = 0.975;
   if (havePolygon)
   {
     double area = tempPoly.getArea();
@@ -252,7 +252,7 @@ double World::GetSetRadMax(Polygon& tempPoly){
   //TODO: This still feels buggy for user-defined polygons
   if (havePolygon)
   {
-    double arenaArea = (width*height)*(0.5);
+    double arenaArea = (width*height)*(0.25);
     double testScale = 1.05;
     double area = tempPoly.getArea();
     // Can we do this loop algebraically?

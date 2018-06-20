@@ -214,6 +214,7 @@ void Polygon::primeCorners(double flare)
         alpha = atan2(cross, dot);
         angle = fabs(floor(alpha * 180. / M_PI + 0.5));
         
+        // Flare sets the amount we scale at 90 degree angles
         scale = 1/(angle/(90 * flare)); //  Gives f(90) = 1.75, f(180) = 1
         if (scale < 1)
             scale = 1;

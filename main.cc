@@ -403,7 +403,7 @@ int main(int argc, char *argv[])
   // Various declarations for main loop
   
   double delta = 0.6;
-  double sdelta = 0.95;
+  double sdelta = 0.975; // 'scale' delta. Multiplicative delta, not additive
   double xdelta = 0;
   double ydelta = 0;
 
@@ -434,7 +434,7 @@ int main(int argc, char *argv[])
     boxArea = (0.5)*apothem*perimeter;
   }
 
-  uint64_t maxsteps = 100000L;
+  uint64_t maxsteps = 200000L;
 
   // This is the center of the contracting shape
   double goalx = WIDTH / 2.0;
@@ -488,9 +488,11 @@ int main(int argc, char *argv[])
         {
           if (world->havePolygon)
           {
-            world->polygon.scale(sdelta);
             while(radius < RADMIN)
+            {
+              world->polygon.scale(sdelta);
               radius *= sdelta; // Get us above the threshold to grow
+            }
           }
           else
             radius += delta;
@@ -500,7 +502,7 @@ int main(int argc, char *argv[])
       {
         if (radius < RADMIN)
         {
-          delta = -delta; // * 2.0;
+          //delta = -delta; // * 2.0;
           sdelta = 2-sdelta;
 
           //xdelta = 0.1;
@@ -512,13 +514,21 @@ int main(int argc, char *argv[])
 
         else if (radius > RADMAX)
         {
-          delta = -delta; //downdelta;
+          //delta = -delta; //downdelta;
           sdelta = 2-sdelta;
         }
 
         // This shouldn't be an else despite the above
         if (radius <= RADMAX)
         {
+          if (radius > RADMAX*0.5 && world->havePolygon && sdelta > 1)
+          {
+            world->havePolygon = false;
+          }
+          else if (radius < RADMAX*0.5 && !world->havePolygon && sdelta < 1)
+          {
+            world->havePolygon = true;
+          }
           // Turns all necessary lights on for a specific amount of contraction (radius)
           // The polygon will automatically be used if it is well defined
           world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH);
@@ -534,13 +544,8 @@ int main(int argc, char *argv[])
         // This handles both contractions and dilation
         if (holdFor == 0) // If we aren't staying contracted
         {
-          if (world->havePolygon)
-          {
-            world->polygon.scale(sdelta);
-            radius *= sdelta;
-          }
-          else
-            radius += delta;
+          world->polygon.scale(sdelta);
+          radius *= sdelta;
         }
 
         // Optionally move the collected resources
