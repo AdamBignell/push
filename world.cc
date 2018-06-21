@@ -119,19 +119,22 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
       if (havePolygon) // Use the polygon
       {
         on = (fabs(polygon.getDistFromPoint(x, y) < fmax(fmax(lx,ly)/2,PATTWIDTH)));
-        // if (on) // TODO: Fix gradual off idea
-        // {
-        //   double minDist = width*height;
-        //   for (auto vertex: polygon.vertices)
-        //   {
-        //     // Use squared distance since we only care about order
-        //     dist = ((x - vertex.x) * (x - vertex.x)) + ((y - vertex.y) * (y - vertex.y));
-        //     if (dist < minDist)
-        //       minDist = dist;
-        //   }
-        //   std::tuple<double, int> lightTuple(minDist, x + y * lside);
-        //   lightsOn.push_back(lightTuple);
-        // }
+        if (on && cornerRate != 0) // TODO: Fix gradual off idea
+        {
+          double minDist = width*height;
+          for (auto vertex: polygon.vertices)
+          {
+            if (vertex.userVert)
+            {
+              // Use squared distance since we only care about order
+              dist = ((x - vertex.x) * (x - vertex.x)) + ((y - vertex.y) * (y - vertex.y));
+              if (dist < minDist)
+                minDist = dist;
+            }
+          }
+          std::tuple<double, int> lightTuple(minDist, x + y * lside);
+          lightsOn.push_back(lightTuple);
+        }
       }
       else // Use the circle
       {
@@ -160,14 +163,17 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
   
   // TODO: Fix gradual off idea
   // This lexicographically sorts the tuples by distance
-  // std::sort(lightsOn.begin(), lightsOn.end());
-  // int lightsTurnedOff = 0;
-  // int i = 0;
-  // while (lightsTurnedOff / lightsOn.size() < cornerRate || lightsTurnedOff / lightsOn.size() == 1)
-  // {
-  //   SetLightIntensity(std::get<1>(lightsOn[lightsTurnedOff]), 0);
-  //   lightsTurnedOff++;
-  // }
+  if (cornerRate != 0)
+  {
+    std::sort(lightsOn.begin(), lightsOn.end());
+    double lightsTurnedOff = 0;
+    int i = 0;
+    while (lightsTurnedOff / lightsOn.size() < cornerRate/2.0 || lightsTurnedOff / lightsOn.size() == 1.0)
+    {
+      SetLightIntensity(std::get<1>(lightsOn[lightsTurnedOff]), 0);
+      lightsTurnedOff += 1.0;
+    }
+  }
 }
 
 double World::GetLightIntensityAt(double x, double y)
@@ -463,7 +469,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
     std::istringstream vertPair(line);
     double x, y;
     if (!(vertPair >> x >> y)) { break; } // error
-    polygon.addVertex(x, y);
+    polygon.addVertex(x, y, true);
   }
 
   if (polygon.vertices.size() < 3)

@@ -434,7 +434,7 @@ int main(int argc, char *argv[])
     boxArea = (0.5)*apothem*perimeter;
   }
 
-  uint64_t maxsteps = 200000L;
+  uint64_t maxsteps = 100000L;
 
   // This is the center of the contracting shape
   double goalx = WIDTH / 2.0;
@@ -468,7 +468,7 @@ int main(int argc, char *argv[])
   // Can stop the holding behaviour by setting this to false
   // holdFor is set automatically below; it should be 0 here to begin
   bool holdAtMin = true;
-  int holdFor = 0;
+  double holdFor = 0;
 
   /* Loop until the user closes the window */
   // Note that for irregular polygons we define the radius as the shortest distance
@@ -482,8 +482,8 @@ int main(int argc, char *argv[])
         fprintf(stderr, ".");
       if (holdFor != 0 && holdAtMin)
       {
+        world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH, 1.0 - (holdFor / (5000.0/updateRate)));
         holdFor--;
-        world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH, 1 - (holdFor / (1000/updateRate)));
         if (holdFor == 0)
         {
           if (world->havePolygon)
@@ -508,7 +508,7 @@ int main(int argc, char *argv[])
           //xdelta = 0.1;
           if (holdAtMin)
             // Trial and error: this is a decent heuristic
-            holdFor = 1000/updateRate;
+            holdFor = 5000/updateRate;
           continue;
         }
 

@@ -15,9 +15,9 @@ Polygon::Polygon(std::vector<Vertex> newV, double newCx, double newCy)
     std::move(newV.begin(), it, std::back_inserter(vertices));
 }
 
-void Polygon::addVertex(double x, double y)
+void Polygon::addVertex(double x, double y, bool userVert)
 {
-    Vertex point(x, y);
+    Vertex point(x, y, userVert);
     vertices.push_back(point);
 }
 

@@ -32,9 +32,15 @@ class Vertex
 {
 public:
   double x, y;
+  bool userVert; // Is the vertex user-supplied or added as part of our control strategy?
+
+  Vertex(double x, double y, bool userVert) : x(x), y(y), userVert(userVert)
+  {
+  }
 
   Vertex(double x, double y) : x(x), y(y)
   {
+    userVert = false;
   }
 };
 
@@ -55,7 +61,7 @@ public:
   
   Polygon(std::vector<Vertex> newV, double cx, double cy);
 
-  void addVertex(double x, double y);
+  void addVertex(double x, double y, bool userVert);
   void translate(double dx, double dy, bool recenter);
   void scale(double s, double cx, double cy);
   void scale(double d);
