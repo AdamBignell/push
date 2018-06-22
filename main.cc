@@ -472,7 +472,7 @@ int main(int argc, char *argv[])
   // holdFor is set automatically below; it should be 0 here to begin
   bool holdAtMin = true;
   double holdTime = 5000/updateRate;
-  if (pFileName != "")
+  if (pFileName == "")
     holdTime = 1000/updateRate; // Circles are way more robuts. Need not waste time.
   double holdFor = 0;
 
