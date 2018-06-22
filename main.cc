@@ -488,7 +488,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, ".");
       if (holdFor != 0 && holdAtMin)
       {
-        world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH, 1.0 - (holdFor / (5000.0/updateRate)));
+        world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH, 1.0 - (holdFor / holdTime));
         holdFor--;
         if (holdFor == 0)
         {
@@ -514,7 +514,7 @@ int main(int argc, char *argv[])
           //xdelta = 0.1;
           if (holdAtMin)
             // Trial and error: this is a decent heuristic
-            holdFor = 5000/updateRate;
+            holdFor = holdTime;
           continue;
         }
 
