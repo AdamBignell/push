@@ -497,6 +497,34 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
 
   bool World::populateGoals(double RADMIN)
   {
+    // bounding box
+    double bbmaxx = -1 * std::numeric_limits<double>::infinity();
+    double bbmaxy = -1 * std::numeric_limits<double>::infinity();
+    double bbminx = std::numeric_limits<double>::infinity();
+    double bbminy = std::numeric_limits<double>::infinity();
+
+    if (havePolygon)
+    {
+      for (auto v : goalPolygon.vertices)
+      {
+        if (v.x > bbmaxx)
+          bbmaxx = v.x;
+        if (v.y > bbmaxy)
+          bbmaxy = v.y;
+        if (v.x < bbminx)
+          bbminx = v.x;
+        if (v.y < bbminy)
+          bbminy = v.y;
+      }
+    }
+    else
+    {
+      bbmaxx = width;
+      bbmaxy = height;
+      bbminx = 0;
+      bbminy = 0;
+    }
+
     // The below assumes we are packing hexagons
     double cx = (width)/2.0;
     double cy = (height)/2.0;
@@ -506,16 +534,17 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
     // This looks like a scary double for-loop but it's just
     // iterating through the centers of the hexagons that tile the arena
     // The i increment is how far up from hexagon center the next row of centers is
-    double j = 0;
+    double j, i = 0;
     int row;
-    for (double i = 0; i < height; i += (r/2.0 + (r/4.0)))
+    bool finished = false;
+    for (i = bbminy; i < bbmaxy; i += (r/2.0 + (r/4.0)))
     {
       // The j increment is the horizontal distance to the next center
       if (row % 2 == 0)
-        j = 0;
+        j = bbminx;
       else
-        j = apothem;
-      for (; j < width; j += 2*apothem)
+        j = bbminx - apothem;
+      for (; j < bbmaxx; j += 2*apothem)
       {
         if (havePolygon)
         {
@@ -523,7 +552,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
           {
             AddGoal(new Goal(*this, j, i, r, Goal::SHAPE_HEX));
             if (goals.size() == boxes.size())
-              return true;
+              finished = true;
           }
         }
         else // Goal is a circle
@@ -531,10 +560,27 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
           if (sqrt((cx-j)*(cx-j) + (cy-i)*(cy-i)) < RADMIN)
           {
             AddGoal(new Goal(*this, j, i, r, Goal::SHAPE_HEX));
+            if (goals.size() == boxes.size())
+              finished = true;
           }
         }
+        if (finished)
+          break;
       }
+      if (finished)
+        break;
       ++row;
+    }
+
+    // Recenter the goals using the bounding box
+    double dy = bbmaxy - (i -  (r/2.0 + (r/4.0)));
+    double dx = bbmaxx - (j - (2*apothem));
+
+    for (auto& g: goals)
+    {
+      g->x += dy/2.0;
+      g->y += dx/2.0;
+      g->body->SetTransform(b2Vec2(g->x, g->y), 0);
     }
 
     return true;
