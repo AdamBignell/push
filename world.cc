@@ -97,6 +97,11 @@ void World::AddBox(Box *b)
   boxes.push_back(b);
 }
 
+void World::AddGoal(Goal *g)
+{
+  goals.push_back(g);
+}
+
 void World::SetLightIntensity(size_t index, double intensity)
 {
   if (index < lights.size())
@@ -272,6 +277,10 @@ double World::GetRadMin(double numBoxes, double boxArea, double robot_size, Poly
       tempPoly.scale(testScale);
       area *= testScale*testScale; // Area grows by the square of the scaling
     }
+
+    goalPolygon.vertices = tempPoly.vertices;
+    goalPolygon.cx = tempPoly.cx;
+    goalPolygon.cy = tempPoly.cy;
     return tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
   }
 
@@ -485,3 +494,48 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
     return true;
   }
 }
+
+  bool World::populateGoals(double RADMIN)
+  {
+    // The below assumes we are packing hexagons
+    double cx = (width)/2.0;
+    double cy = (height)/2.0;
+    double r = boxes[0]->size;
+    double apothem = sqrt(r*r - (r/2.0)*(r/(2.0)))/2.0;
+
+    // This looks like a scary double for-loop but it's just
+    // iterating through the centers of the hexagons that tile the arena
+    // The i increment is how far up from hexagon center the next row of centers is
+    double j = 0;
+    int row;
+    for (double i = 0; i < height; i += (r/2.0 + (r/4.0)))
+    {
+      // The j increment is the horizontal distance to the next center
+      if (row % 2 == 0)
+        j = 0;
+      else
+        j = apothem;
+      for (; j < width; j += 2*apothem)
+      {
+        if (havePolygon)
+        {
+          if (goalPolygon.pointInsidePoly(j, i))
+          {
+            AddGoal(new Goal(*this, j, i, r, Goal::SHAPE_HEX));
+            if (goals.size() == boxes.size())
+              return true;
+          }
+        }
+        else // Goal is a circle
+        {
+          if (sqrt((cx-j)*(cx-j) + (cy-i)*(cy-i)) < RADMIN)
+          {
+            AddGoal(new Goal(*this, j, i, r, Goal::SHAPE_HEX));
+          }
+        }
+      }
+      ++row;
+    }
+
+    return true;
+  }

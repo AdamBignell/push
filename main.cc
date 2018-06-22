@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
     world->polygon.translate(-1*centroid.x, -1*centroid.y, false);
 
     // Move the polygon into the arena's coordinate system, with (0,0) in the bottom left
-    world->polygon.translate((WIDTH-1)/2.0, (HEIGHT-1)/2.0, true);
+    world->polygon.translate((WIDTH)/2.0, (HEIGHT)/2.0, true);
   }
 
 
@@ -452,7 +452,10 @@ int main(int argc, char *argv[])
     radius = world->polygon.getDistFromPoint(goalx, goaly);
   }
 
+  // Get Rad Min alos captures the goal polygon. We have to call populateGoals() after this
   double RADMIN = world->GetRadMin(BOXES, boxArea, robot_size, world->polygon);
+
+  world->populateGoals(RADMIN);
 
   // These lines prime the polygon
   if (world->havePolygon && flare > 0)
@@ -468,6 +471,9 @@ int main(int argc, char *argv[])
   // Can stop the holding behaviour by setting this to false
   // holdFor is set automatically below; it should be 0 here to begin
   bool holdAtMin = true;
+  double holdTime = 5000/updateRate;
+  if (pFileName != "")
+    holdTime = 1000/updateRate; // Circles are way more robuts. Need not waste time.
   double holdFor = 0;
 
   /* Loop until the user closes the window */
@@ -521,13 +527,16 @@ int main(int argc, char *argv[])
         // This shouldn't be an else despite the above
         if (radius <= RADMAX)
         {
-          if (radius > RADMAX*0.5 && world->havePolygon && sdelta > 1)
+          if (pFileName != "") // proxy to determine if a polygon was supplied
           {
-            world->havePolygon = false;
-          }
-          else if (radius < RADMAX*0.5 && !world->havePolygon && sdelta < 1)
-          {
-            world->havePolygon = true;
+            if (radius > RADMAX*0.5 && world->havePolygon && sdelta > 1)
+            {
+              world->havePolygon = false;
+            }
+            else if (radius < RADMAX*0.5 && !world->havePolygon && sdelta < 1)
+            {
+              world->havePolygon = true;
+            }
           }
           // Turns all necessary lights on for a specific amount of contraction (radius)
           // The polygon will automatically be used if it is well defined

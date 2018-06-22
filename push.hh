@@ -11,7 +11,8 @@ enum _entityCategory
   BOXBOUNDARY = 0x1,
   ROBOTBOUNDARY = 0x2,
   ROBOT = 0x4,
-  BOX = 0x8
+  BOX = 0x8,
+  GOAL = 0x10
 };
 
 class Robot;
@@ -82,10 +83,14 @@ public:
   // Skew the corners so that you end up with the right shape
   // This attempts to fix the 'rounded square' effect
   void primeCorners(double flare);
+
+  // Uses ray-casting algorithm
+  bool pointInsidePoly(double x, double y);
 };
 
 class Robot;
 class Box;
+class Goal;
 
 class World
 {
@@ -104,6 +109,9 @@ public:
 
   Polygon polygon;
 
+  // This defines the desired shape upon completion
+  Polygon goalPolygon;
+
   bool havePolygon;
 
   // Just for convenience
@@ -114,6 +122,7 @@ public:
   std::vector<Light *> lights;
   std::vector<Box *> boxes;
   std::vector<Robot *> robots;
+  std::vector<Goal *> goals;
 
   World(double width, double height, int numLights, int drawInterval);
 
@@ -121,6 +130,7 @@ public:
   virtual void AddBox(Box *box);
   virtual void AddLight(Light *light);
   virtual void AddLightGrid(size_t xcount, size_t ycount, double height, double intensity);
+  virtual void AddGoal(Goal *goal);
 
   // set the intensity of the light at @index. If @index is out of
   // range, the call has no effect
@@ -165,6 +175,10 @@ public:
   void updateRobotsFromString(std::string &robotStr);
   void updateBoxesFromString(std::string &boxStr);
   void updateLightsFromString(std::string &lightStr);
+
+  // Note that all the information we need is part of the world already
+  // Hence the argumentless call
+  bool populateGoals(double RADMIN);
 };
 
 class GuiWorld : public World
@@ -280,4 +294,24 @@ public:
   b2Body *body;
 
   Box(World &world, box_shape_t shape, double size, double x, double y, double a);
+};
+
+class Goal
+{
+public:
+  double x, y;
+  double size;
+
+  b2Body *body;
+
+  typedef enum
+  {
+    SHAPE_RECT = 0,
+    SHAPE_HEX,
+    SHAPE_CIRC
+  } goal_shape_t;
+
+  goal_shape_t shape;
+
+  Goal(World &world, double x, double y, double size, goal_shape_t shape);
 };

@@ -7,6 +7,7 @@ const double c_red[3] = {1.0, 0.0, 0.0};
 const double c_darkred[3] = {0.8, 0.0, 0.0};
 const double c_tan[3] = {0.8, 0.6, 0.5};
 const double c_gray[3] = {0.9, 0.9, 1.0};
+const double c_royalblue[3] = {0.20, 0.55, 0.90};
 
 bool World::paused = false;
 bool GuiWorld::step = false;
@@ -222,6 +223,13 @@ void GuiWorld::Step(double timestep)
 			}
 		}
 
+		// draw the goals
+		int once = 0;
+		for (auto &g : goals)
+		{
+			DrawBody(g->body, c_royalblue, g->size);
+		}
+
 		// draw the walls
 		for (int i = 0; i < 4; i++)
 			DrawBody(boxWall[i], c_gray, -1);
@@ -229,6 +237,7 @@ void GuiWorld::Step(double timestep)
 		for (int i = 0; i < 4; i++)
 			DrawBody(robotWall[i], c_gray, -1);
 
+		// draw the boxes
 		for (auto &b : boxes)
 			DrawBody(b->body, c_gray, b->size);
 

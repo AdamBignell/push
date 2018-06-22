@@ -255,3 +255,21 @@ void Polygon::primeCorners(double flare)
         vertices[2*i].y *= scales[i];
     }
 }
+
+  // Uses ray-casting algorithm
+  bool Polygon::pointInsidePoly(double x, double y)
+  {
+    int crossCount = 0;
+    for (int i=0; i<vertices.size(); i++) {
+        // if (the ray crosses a line segment of the poly)
+        if (((vertices[i].y <= y) && (vertices[(i+1) % vertices.size()].y > y))     // +ve slope, point crosses
+            || ((vertices[i].y > y) && (vertices[(i+1) % vertices.size()].y <=  y))) {  // -ve slope, point crosses
+            // Find x coordinate of intersection
+            float xcross = (float)(y  - vertices[i].y) / (vertices[(i+1) % vertices.size()].y - vertices[i].y);
+
+            if (x <  vertices[i].x + xcross * (vertices[(i+1) % vertices.size()].x - vertices[i].x)) // if the point to the left of the intersect
+                 crossCount = !crossCount;   // The ray really does cross
+        }
+    }
+    return crossCount;
+  }
