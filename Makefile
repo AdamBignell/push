@@ -12,7 +12,7 @@ CCFLAGS = -std=c++11 -g -O0 `pkg-config --cflags glfw3`
 LDFLAGS = `pkg-config --libs glfw3` -lBox2D -lGL -lX11 -lXrandr -lXinerama -lXxf86vm -lXcursor -lpthread -ldl #-lb2dJson
 
 
-SRC = main.cc world.cc robot.cc box.cc guiworld.cc polygon.cc
+SRC = main.cc world.cc robot.cc box.cc guiworld.cc polygon.cc goal.cc
 HDR = push.hh
 
 # Change this to wherever your Box2D source code is

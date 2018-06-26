@@ -7,7 +7,7 @@ Box::Box(World &world, box_shape_t shape, double size, double x, double y, doubl
       size(size)
 {
   b2PolygonShape dynamicBox;
-  b2CircleShape dynamicCircle;;
+  b2CircleShape dynamicCircle;
 
   switch (shape)
   {

@@ -45,10 +45,12 @@ World::World(double width, double height, int numLights, int drawInterval) : ste
   // boxWall[3]->SetTransform(b2Vec2(width - width / 4.0, height - height / 2.0), M_PI / 2.0);
 
   // Zoomed Out
-  boxWall[0]->SetTransform(b2Vec2(width / 2, height * (3/8.0)), 0);
-  boxWall[1]->SetTransform(b2Vec2(width / 2, height - (height * (3/8.0))), 0);
-  boxWall[2]->SetTransform(b2Vec2(width * (3/8.0), height / 2), M_PI / 2.0);
-  boxWall[3]->SetTransform(b2Vec2(width - (width * (3/8.0)), height - height / 2.0), M_PI / 2.0);
+  double ldx = (sqrt(numLights)/width)/2.0;
+  double ldy = (sqrt(numLights)/height)/2.0;
+  boxWall[0]->SetTransform(b2Vec2((width / 2) + ldx, height * (3/8.0) + ldy), 0);
+  boxWall[1]->SetTransform(b2Vec2((width / 2) + ldx, height - (height * (3/8.0)) + ldy), 0);
+  boxWall[2]->SetTransform(b2Vec2(width * (3/8.0) + ldx, height / 2  + ldy), M_PI / 2.0);
+  boxWall[3]->SetTransform(b2Vec2(width - (width * (3/8.0)) + ldx, height - (height / 2.0) + ldy), M_PI / 2.0);
 
   // set exterior box container
   b2BodyDef boxWallDef1;
@@ -535,7 +537,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
           bbminy = v.y;
       }
 
-      bbminx += r;
+      bbminx += apothem;
       bbminy += r;
     }
     else
@@ -634,49 +636,39 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
       }
     }
 
-    //Recenter the goals using the bounding box
-    //TODO: Make this actually recenter
-    // double dy = bbmaxy - i;
-    // double dx = bbmaxx - j;
+    double ldx = sqrt(numLights)/width/2.0;
+    double ldy = sqrt(numLights)/height/2.0;
+    double trueCx = (width / 2.0) + ldx;
+    double trueCy = (height / 2.0) + ldy;
 
-    //bounding box of goals
-    // double bbgmaxx = -1 * std::numeric_limits<double>::infinity();
-    // double bbgmaxy = -1 * std::numeric_limits<double>::infinity();
-    // double bbgminx = std::numeric_limits<double>::infinity();
-    // double bbgminy = std::numeric_limits<double>::infinity();
+    // Find the center of the goal centers
+		bbmaxx = -1 * std::numeric_limits<double>::infinity();
+		bbmaxy = -1 * std::numeric_limits<double>::infinity();
+		bbminx = std::numeric_limits<double>::infinity();
+		bbminy = std::numeric_limits<double>::infinity();
+		double size = 0;
+		for (auto &g : goals)
+		{
+			if (g->x > bbmaxx)
+			  bbmaxx = g->x;
+			if (g->y > bbmaxy)
+			  bbmaxy = g->y;
+			if (g->x < bbminx)
+			  bbminx = g->x;
+			if (g->y < bbminy)
+			  bbminy = g->y;
+		}
 
-    // for (auto gl : goals)
-    // {
-    //   if (gl->x > bbgmaxx)
-    //     bbgmaxx = gl->x;
-    //   if (gl->y > bbgmaxy)
-    //     bbgmaxy = gl->y;
-    //   if (gl->x < bbgminx)
-    //     bbgminx = gl->x;
-    //   if (gl->y < bbgminy)
-    //     bbgminy = gl->y;
-    // }
+    // Adjust to match the center of convergence for the lights
+    double dx = trueCx - (bbmaxx+bbminx)/2.0;
+    double dy = trueCy - (bbmaxy+bbminy)/2.0;
 
-    // bbgmaxx += r;
-    // bbgminx -= r;
-    // bbgmaxy += r;
-    // bbgminy -= r;
-
-    // double shapeCenterX = (bbmaxx + bbminx) / 2.0;
-    // double shapeCenterY = (bbmaxy + bbminy) / 2.0;
-
-    // double goalCenterX = (bbgmaxx + bbgminx) / 2.0;
-    // double goalCenterY = (bbgmaxy + bbgminy) / 2.0;
-
-    // double dx = cx - goalCenterX;
-    // double dy = cy - goalCenterY;
-
-    // for (auto& g: goals)
-    // {
-    //   g->x += dx;
-    //   g->y += dy;
-    //   g->body->SetTransform(b2Vec2(g->x, g->y), 0);
-    // }
+    for (auto& g: goals)
+    {
+      g->x += dx;
+      g->y += dy;
+      g->body->SetTransform(b2Vec2(g->x, g->y), 0);
+    }
 
     return true;
   }

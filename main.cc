@@ -311,10 +311,12 @@ int main(int argc, char *argv[])
   //                        drand48() * M_PI));
 
   // Zoomed Out
+  double ldx = sqrt(LIGHTS)/WIDTH/2.0;
+  double ldy = sqrt(LIGHTS)/HEIGHT/2.0;
   for (int i = 0; i < BOXES; i++)
     world->AddBox(new Box(*world, box_type, box_size,
-                         WIDTH * (3/8.0) + drand48() * WIDTH * 0.25,
-                         HEIGHT * (3/8.0) + drand48() * HEIGHT * 0.25,
+                         WIDTH * (3/8.0) + drand48() * WIDTH * 0.25 + ldx,
+                         HEIGHT * (3/8.0) + drand48() * HEIGHT * 0.25 + ldy,
                          drand48() * M_PI));
 
   for (int i = 0; i < ROBOTS; i++)
