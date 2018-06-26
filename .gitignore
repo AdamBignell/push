@@ -1,5 +1,7 @@
 Box2D_v2.3.0
 
+shapes/*.txt
+
 # Compiled source #
 ###################
 *.com
