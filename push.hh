@@ -59,6 +59,8 @@ public:
   }
 
   Polygon(double cx, double cy);
+
+  Polygon(Polygon& poly);
   
   Polygon(std::vector<Vertex> newV, double cx, double cy);
 
@@ -107,10 +109,10 @@ public:
   b2Body *boxWall[4];
   b2Body *robotWall[4];
 
-  Polygon polygon;
+  Polygon *polygon;
 
   // This defines the desired shape upon completion
-  Polygon goalPolygon;
+  Polygon *goalPolygon;
 
   bool havePolygon;
 
@@ -162,11 +164,11 @@ public:
 
   // Get the minimum contracted size
   // Use total box area to estimate
-  double GetRadMin(double numBoxes, double boxArea, double robot_size, Polygon tempPoly);
+  double GetRadMin(double numBoxes, double boxArea, double robot_size, Polygon* tempPoly);
 
   // Approximately Match arena Size,
   // and actually set the polgyon to this size
-  double GetSetRadMax(Polygon& tempPoly);
+  double GetSetRadMax(Polygon* tempPoly);
 
   // Saves the world state to a JSON file
   void saveWorldHeader(std::string saveFileName);

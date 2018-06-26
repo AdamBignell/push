@@ -15,6 +15,14 @@ Polygon::Polygon(std::vector<Vertex> newV, double newCx, double newCy)
     std::move(newV.begin(), it, std::back_inserter(vertices));
 }
 
+Polygon::Polygon(Polygon& poly)
+{
+    cx = poly.cx;
+    cy = poly.cy;
+    auto it = std::next(poly.vertices.begin(), poly.vertices.size());
+    std::move(poly.vertices.begin(), it, std::back_inserter(vertices));
+}
+
 void Polygon::addVertex(double x, double y, bool userVert)
 {
     Vertex point(x, y, userVert);

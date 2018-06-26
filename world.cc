@@ -17,6 +17,9 @@ World::World(double width, double height, int numLights, int drawInterval) : ste
   b2BodyDef boxWallDef;
   b2PolygonShape groundBox;
 
+  polygon = new Polygon();
+  goalPolygon = new Polygon();
+
   //groundBox.SetAsBox(width / 4.0, 0.01f); // Zoomed in
   groundBox.SetAsBox(width / 8.0, 0.01f); // Zoomed Out
 
@@ -123,11 +126,11 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
       int on = 0;
       if (havePolygon) // Use the polygon
       {
-        on = (fabs(polygon.getDistFromPoint(x, y) < fmax(fmax(lx,ly)/2,PATTWIDTH)));
-        if (on && cornerRate != 0) // TODO: Fix gradual off idea
+        on = (fabs(polygon->getDistFromPoint(x, y) < fmax(fmax(lx,ly)/2,PATTWIDTH)));
+        if (on && cornerRate != 0)
         {
           double minDist = width*height;
-          for (auto vertex: polygon.vertices)
+          for (auto vertex: polygon->vertices)
           {
             if (vertex.userVert)
             {
@@ -261,10 +264,10 @@ void World::Step(double timestep)
 
 // Get the minimum contracted size
 // Use total box area to estimate
-double World::GetRadMin(double numBoxes, double boxArea, double robot_size, Polygon tempPoly)
+double World::GetRadMin(double numBoxes, double boxArea, double robot_size, Polygon* realPoly)
 {
-  //TODO: This still feels buggy for user-defined polygons
-  double totalBoxArea = numBoxes * boxArea;
+  Polygon tempPoly(*realPoly)
+;  double totalBoxArea = numBoxes * boxArea;
   double testScale = 0.975;
   if (havePolygon)
   {
@@ -278,9 +281,9 @@ double World::GetRadMin(double numBoxes, double boxArea, double robot_size, Poly
       area *= testScale*testScale; // Area grows by the square of the scaling
     }
 
-    goalPolygon.vertices = tempPoly.vertices;
-    goalPolygon.cx = tempPoly.cx;
-    goalPolygon.cy = tempPoly.cy;
+    goalPolygon->vertices = tempPoly.vertices;
+    goalPolygon->cx = tempPoly.cx;
+    goalPolygon->cy = tempPoly.cy;
     return tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
   }
 
@@ -289,20 +292,20 @@ double World::GetRadMin(double numBoxes, double boxArea, double robot_size, Poly
   return radMin;
 }
 
-double World::GetSetRadMax(Polygon& tempPoly){
+double World::GetSetRadMax(Polygon* tempPoly){
   //TODO: This still feels buggy for user-defined polygons
   if (havePolygon)
   {
     double arenaArea = (width*height)*(0.25);
     double testScale = 1.05;
-    double area = tempPoly.getArea();
+    double area = tempPoly->getArea();
     // Can we do this loop algebraically?
     while (area < arenaArea) // Want to be sufficiently wide
     {
-      tempPoly.scale(testScale);
+      tempPoly->scale(testScale);
       area *= testScale*testScale;
     }
-    return tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
+    return tempPoly->getDistFromPoint(tempPoly->cx,tempPoly->cy);
   }
 
   //Circle case
@@ -478,16 +481,16 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
     std::istringstream vertPair(line);
     double x, y;
     if (!(vertPair >> x >> y)) { break; } // error
-    polygon.addVertex(x, y, true);
+    polygon->addVertex(x, y, true);
   }
 
-  if (polygon.vertices.size() < 3)
+  if (polygon->vertices.size() < 3)
   {
     // Invalid polygon
     return false;
   }
   
-  if (polygon.vertices.size() > 2)
+  if (polygon->vertices.size() > 2)
   {
     // Used throughout to detect if we are in the circle or poly case
     havePolygon = true;
@@ -497,6 +500,14 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
 
   bool World::populateGoals(double RADMIN)
   {
+    // The below assumes we are packing hexagons
+    double cx = ceil(width/2.0);
+    double cy = ceil(height/2.0);
+    double d = boxes[0]->size; // diameter
+    double r = d/2.0; //radius
+    double apothem = sqrt(d*d - r*r)/2.0;
+    double oneBoxArea = (apothem * (r/2.0)) * 6.0;
+
     // bounding box
     double bbmaxx = -1 * std::numeric_limits<double>::infinity();
     double bbmaxy = -1 * std::numeric_limits<double>::infinity();
@@ -505,7 +516,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
 
     if (havePolygon)
     {
-      for (auto v : goalPolygon.vertices)
+      for (auto v : goalPolygon->vertices)
       {
         if (v.x > bbmaxx)
           bbmaxx = v.x;
@@ -516,6 +527,9 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
         if (v.y < bbminy)
           bbminy = v.y;
       }
+
+      bbminx += r;
+      bbminy += r;
     }
     else
     {
@@ -525,19 +539,13 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
       bbminy = 0;
     }
 
-    // The below assumes we are packing hexagons
-    double cx = (width)/2.0;
-    double cy = (height)/2.0;
-    double r = boxes[0]->size;
-    double apothem = sqrt(r*r - (r/2.0)*(r/(2.0)))/2.0;
-
     // This looks like a scary double for-loop but it's just
     // iterating through the centers of the hexagons that tile the arena
     // The i increment is how far up from hexagon center the next row of centers is
     double j, i = 0;
     int row;
     bool finished = false;
-    for (i = bbminy; i < bbmaxy; i += (r/2.0 + (r/4.0)))
+    for (i = bbminy; i < bbmaxy; i += (r + (r/2.0)))
     {
       // The j increment is the horizontal distance to the next center
       if (row % 2 == 0)
@@ -548,18 +556,28 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
       {
         if (havePolygon)
         {
-          if (goalPolygon.pointInsidePoly(j, i))
+          if (goalPolygon->pointInsidePoly(j, i))
           {
-            AddGoal(new Goal(*this, j, i, r, Goal::SHAPE_HEX));
+            AddGoal(new Goal(*this, j, i, d, Goal::SHAPE_HEX));
             if (goals.size() == boxes.size())
-              finished = true;
+            {
+              if (goalPolygon->getArea() - goals.size() * oneBoxArea > oneBoxArea)
+              {
+                goalPolygon->scale(0.975);
+                goals.clear();
+                populateGoals(RADMIN);
+                return true;
+              }
+              else
+                finished = true;
+            }
           }
         }
         else // Goal is a circle
         {
           if (sqrt((cx-j)*(cx-j) + (cy-i)*(cy-i)) < RADMIN)
           {
-            AddGoal(new Goal(*this, j, i, r, Goal::SHAPE_HEX));
+            AddGoal(new Goal(*this, j, i, d, Goal::SHAPE_HEX));
             if (goals.size() == boxes.size())
               finished = true;
           }
@@ -572,16 +590,49 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
       ++row;
     }
 
-    // Recenter the goals using the bounding box
-    double dy = bbmaxy - (i -  (r/2.0 + (r/4.0)));
-    double dx = bbmaxx - (j - (2*apothem));
+    //Recenter the goals using the bounding box
+    //TODO: Make this actually recenter
+    // double dy = bbmaxy - i;
+    // double dx = bbmaxx - j;
 
-    for (auto& g: goals)
-    {
-      g->x += dy/2.0;
-      g->y += dx/2.0;
-      g->body->SetTransform(b2Vec2(g->x, g->y), 0);
-    }
+    //bounding box of goals
+    // double bbgmaxx = -1 * std::numeric_limits<double>::infinity();
+    // double bbgmaxy = -1 * std::numeric_limits<double>::infinity();
+    // double bbgminx = std::numeric_limits<double>::infinity();
+    // double bbgminy = std::numeric_limits<double>::infinity();
+
+    // for (auto gl : goals)
+    // {
+    //   if (gl->x > bbgmaxx)
+    //     bbgmaxx = gl->x;
+    //   if (gl->y > bbgmaxy)
+    //     bbgmaxy = gl->y;
+    //   if (gl->x < bbgminx)
+    //     bbgminx = gl->x;
+    //   if (gl->y < bbgminy)
+    //     bbgminy = gl->y;
+    // }
+
+    // bbgmaxx += r;
+    // bbgminx -= r;
+    // bbgmaxy += r;
+    // bbgminy -= r;
+
+    // double shapeCenterX = (bbmaxx + bbminx) / 2.0;
+    // double shapeCenterY = (bbmaxy + bbminy) / 2.0;
+
+    // double goalCenterX = (bbgmaxx + bbgminx) / 2.0;
+    // double goalCenterY = (bbgmaxy + bbgminy) / 2.0;
+
+    // double dx = cx - goalCenterX;
+    // double dy = cy - goalCenterY;
+
+    // for (auto& g: goals)
+    // {
+    //   g->x += dx;
+    //   g->y += dy;
+    //   g->body->SetTransform(b2Vec2(g->x, g->y), 0);
+    // }
 
     return true;
   }

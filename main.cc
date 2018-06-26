@@ -385,6 +385,10 @@ int main(int argc, char *argv[])
     }
   }
 
+  // This is the center of the contracting shape
+  double goalx = ceil((WIDTH)/2.0);
+  double goaly = ceil((HEIGHT)/2.0);
+
   // These lines prime the polygon
   if (world->havePolygon)
   {
@@ -392,11 +396,11 @@ int main(int argc, char *argv[])
     // world->polygon.primeCorners();
 
     // Make the centroid the origin
-    Vertex centroid = world->polygon.getCentroid();
-    world->polygon.translate(-1*centroid.x, -1*centroid.y, false);
+    Vertex centroid = world->polygon->getCentroid();
+    world->polygon->translate(-1*centroid.x, -1*centroid.y, false);
 
     // Move the polygon into the arena's coordinate system, with (0,0) in the bottom left
-    world->polygon.translate((WIDTH)/2.0, (HEIGHT)/2.0, true);
+    world->polygon->translate(goalx, goaly, true);
   }
 
 
@@ -429,16 +433,12 @@ int main(int argc, char *argv[])
     boxArea = M_PI*((box_size/2)*(box_size/2));
   else // box_type = HEX
   {
-    double perimeter = 6*(box_size/2);
+    //double perimeter = 6*(box_size/2);
     double apothem = sqrt((box_size/2)*(box_size/2) - (box_size/4)*(box_size/4));
-    boxArea = (0.5)*apothem*perimeter;
+    boxArea = (apothem * (box_size/4.0)) * 6.0;
   }
 
   uint64_t maxsteps = 100000L;
-
-  // This is the center of the contracting shape
-  double goalx = WIDTH / 2.0;
-  double goaly = HEIGHT / 2.0;
 
   // We need to adjust the user polygon to fit the arena
   // I'm a little uncomfortable switching from dilating to
@@ -449,7 +449,7 @@ int main(int argc, char *argv[])
   if (world->havePolygon)
   {
     RADMAX = world->GetSetRadMax(world->polygon);
-    radius = world->polygon.getDistFromPoint(goalx, goaly);
+    radius = world->polygon->getDistFromPoint(goalx, goaly);
   }
 
   // Get Rad Min alos captures the goal polygon. We have to call populateGoals() after this
@@ -463,9 +463,9 @@ int main(int argc, char *argv[])
     // Adjust the polygon to account for corners
     // Note that we need to be centered around the origin
     // hence the double translate
-    world->polygon.translate(-(WIDTH-1)/2.0, -(HEIGHT-1)/2.0, true);
-    world->polygon.primeCorners(flare);
-    world->polygon.translate((WIDTH-1)/2.0, (HEIGHT-1)/2.0, true);
+    world->polygon->translate(-goalx, -goaly, true);
+    world->polygon->primeCorners(flare);
+    world->polygon->translate(goalx, goaly, true);
   }
 
   // Can stop the holding behaviour by setting this to false
@@ -496,7 +496,7 @@ int main(int argc, char *argv[])
           {
             while(radius < RADMIN)
             {
-              world->polygon.scale(sdelta);
+              world->polygon->scale(sdelta);
               radius *= sdelta; // Get us above the threshold to grow
             }
           }
@@ -553,7 +553,8 @@ int main(int argc, char *argv[])
         // This handles both contractions and dilation
         if (holdFor == 0) // If we aren't staying contracted
         {
-          world->polygon.scale(sdelta);
+          if (world->havePolygon)
+            world->polygon->scale(sdelta);
           radius *= sdelta;
         }
 
