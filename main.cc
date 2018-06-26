@@ -455,7 +455,7 @@ int main(int argc, char *argv[])
   // Get Rad Min alos captures the goal polygon. We have to call populateGoals() after this
   double RADMIN = world->GetRadMin(BOXES, boxArea, robot_size, world->polygon);
 
-  world->populateGoals(RADMIN);
+  world->populateGoals(RADMIN, 0);
 
   // These lines prime the polygon
   if (world->havePolygon && flare > 0)

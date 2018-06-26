@@ -180,7 +180,7 @@ public:
 
   // Note that all the information we need is part of the world already
   // Hence the argumentless call
-  bool populateGoals(double RADMIN);
+  bool populateGoals(double RADMIN, int callNum);
 };
 
 class GuiWorld : public World

@@ -1,6 +1,7 @@
 #include "push.hh"
 #include <fstream>
 #include <sstream>
+#include <stdio.h>
 #include <string>
 
 World::World(double width, double height, int numLights, int drawInterval) : steps(0),
@@ -498,8 +499,13 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
   }
 }
 
-  bool World::populateGoals(double RADMIN)
+  bool World::populateGoals(double RADMIN, int callNum)
   {
+    // The recursive sections marked below by *** are pretty inefficient
+    // but are extremely general. They will pack as well as possible
+    // given the parameters we have been given. I think this is
+    // reasonable since we only call this function once.
+
     // The below assumes we are packing hexagons
     double cx = ceil(width/2.0);
     double cy = ceil(height/2.0);
@@ -554,18 +560,20 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
         j = bbminx - apothem;
       for (; j < bbmaxx; j += 2*apothem)
       {
-        if (havePolygon)
+        if (havePolygon) // User supplied a polygon
         {
           if (goalPolygon->pointInsidePoly(j, i))
           {
             AddGoal(new Goal(*this, j, i, d, Goal::SHAPE_HEX));
             if (goals.size() == boxes.size())
             {
-              if (goalPolygon->getArea() - goals.size() * oneBoxArea > oneBoxArea)
+              // Limit this so we don't loop forever
+              if (goalPolygon->getArea() - goals.size() * oneBoxArea > oneBoxArea && callNum != 20)
               {
-                goalPolygon->scale(0.975);
+                goalPolygon->scale(0.99);
                 goals.clear();
-                populateGoals(RADMIN);
+                populateGoals(RADMIN, callNum + 1);
+                printf("Number of goals: %i\n", (int)goals.size());
                 return true;
               }
               else
@@ -579,7 +587,20 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
           {
             AddGoal(new Goal(*this, j, i, d, Goal::SHAPE_HEX));
             if (goals.size() == boxes.size())
-              finished = true;
+            {
+              // Limit this so we don't loop forever
+              if (M_PI*(RADMIN*RADMIN) - goals.size() * oneBoxArea > oneBoxArea && callNum != 20)
+              {
+                // We underfilled. Try again
+                RADMIN *= 0.99;
+                goals.clear();
+                populateGoals(RADMIN, callNum + 1);
+                printf("Number of goals: %i\n", (int)goals.size());
+                return true;
+              }
+              else
+                finished = true;
+            }
           }
         }
         if (finished)
@@ -588,6 +609,27 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
       if (finished)
         break;
       ++row;
+    }
+
+    // We overfilled. Try again.
+    if (goals.size() != boxes.size() && callNum < 100)
+    {
+      if (havePolygon)
+      {
+        goalPolygon->scale(1.01);
+        goals.clear();
+        populateGoals(RADMIN, callNum + 1);
+        return true;
+      }
+      else
+      {
+        // We underfilled. Try again
+        RADMIN *= 1.01;
+        goals.clear();
+        populateGoals(RADMIN, callNum + 1);
+        printf("Number of goals: %i\n", (int)goals.size());
+        return true;
+      }
     }
 
     //Recenter the goals using the bounding box
