@@ -4,6 +4,7 @@ shapes/*.txt
 shapes/*.txt~
 *.txt
 *.txt~
+*.json
 
 # Compiled source #
 ###################
