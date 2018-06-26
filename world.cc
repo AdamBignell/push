@@ -504,10 +504,12 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
 
   bool World::populateGoals(double RADMIN, int callNum)
   {
-    // The recursive sections marked below by *** are pretty inefficient
+    // The recursive sections marked below by ** are pretty inefficient
     // but are extremely general. They will pack as well as possible
     // given the parameters we have been given. I think this is
     // reasonable since we only call this function once.
+
+    fprintf(stderr, ".");
 
     // The below assumes we are packing hexagons
     double cx = ceil(width/2.0);
@@ -575,8 +577,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
               {
                 goalPolygon->scale(0.99);
                 goals.clear();
-                populateGoals(RADMIN, callNum + 1);
-                printf("Number of goals: %i\n", (int)goals.size());
+                populateGoals(RADMIN, callNum + 1); /**/
                 return true;
               }
               else
@@ -597,8 +598,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
                 // We underfilled. Try again
                 RADMIN *= 0.99;
                 goals.clear();
-                populateGoals(RADMIN, callNum + 1);
-                printf("Number of goals: %i\n", (int)goals.size());
+                populateGoals(RADMIN, callNum + 1); /**/
                 return true;
               }
               else
@@ -621,8 +621,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
       {
         goalPolygon->scale(1.00 + (rand() % 10)/100);
         goals.clear();
-        populateGoals(RADMIN, callNum + 1);
-        printf("Number of goals: %i\n", (int)goals.size());
+        populateGoals(RADMIN, callNum + 1); /**/
         return true;
       }
       else
@@ -630,8 +629,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
         // We underfilled. Try again
         RADMIN *= 1.00 + (rand() % 10)/100;
         goals.clear();
-        populateGoals(RADMIN, callNum + 1);
-        printf("Number of goals: %i\n", (int)goals.size());
+        populateGoals(RADMIN, callNum + 1); /**/
         return true;
       }
     }
@@ -659,7 +657,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
 			  bbminy = g->y;
 		}
 
-    // Adjust to match the center of convergence for the lights
+    // Adjust to match the center of contraction for the lights
     double dx = trueCx - (bbmaxx+bbminx)/2.0;
     double dy = trueCy - (bbmaxy+bbminy)/2.0;
 

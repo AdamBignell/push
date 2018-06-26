@@ -223,51 +223,9 @@ void GuiWorld::Step(double timestep)
 			}
 		}
 
-		// Testing the centers
-		// bounding box
-		double bbmaxx = -1 * std::numeric_limits<double>::infinity();
-		double bbmaxy = -1 * std::numeric_limits<double>::infinity();
-		double bbminx = std::numeric_limits<double>::infinity();
-		double bbminy = std::numeric_limits<double>::infinity();
-
 		// draw the goals
-		int once = 0;
-		double size = 0;
 		for (auto &g : goals)
-		{
-			size = g->size;
 			DrawBody(g->body, c_royalblue, g->size);
-			if (g->x > bbmaxx)
-			bbmaxx = g->x;
-			if (g->y > bbmaxy)
-			bbmaxy = g->y;
-			if (g->x < bbminx)
-			bbminx = g->x;
-			if (g->y < bbminy)
-			bbminy = g->y;
-		}
-
-		b2CircleShape staticCircle;
-		staticCircle.m_p.Set(0.0f, 0.0f);         //position, relative to body position
-    	staticCircle.m_radius = 0.6 / 2.0; //radius
-		b2FixtureDef fixtureDef;
-		fixtureDef.shape = &staticCircle;	
-		
-		fixtureDef.density = 0;
-		fixtureDef.friction = 0;
-		fixtureDef.restitution = 0;
-
-		fixtureDef.filter.categoryBits = GOAL;
-		fixtureDef.filter.maskBits = 0; //everything
-		// BOX | ROBOT | BOXBOUNDARY | ROBOTBOUNDARY; // everything
-
-		b2BodyDef bodyDef;
-		bodyDef.type = b2_staticBody;
-
-		b2Body* body = b2world->CreateBody(&bodyDef);
-		body->SetTransform(b2Vec2((bbminx + bbmaxx)/2.0, (bbminy + bbmaxy)/2.0), 0);
-
-		body->CreateFixture(&fixtureDef);
 
 		// draw the walls
 		for (int i = 0; i < 4; i++)
@@ -290,9 +248,6 @@ void GuiWorld::Step(double timestep)
 
 			DrawBody(r->body, col, r->size);
 		}
-
-		DrawBody(body, c_red, size);
-		printf("The goalcenter is %f, %f\n", (bbminx + bbmaxx)/2.0, (bbminy + bbmaxy)/2.0);
 
 		// draw a nose on the robot
 		glColor3f(1, 1, 1);
@@ -357,51 +312,12 @@ void GuiWorld::Step(double timestep)
 					bright[y * side + x] /= (1.5 * max); // actually a little less than full alpha
 		}
 
-		// Find the light center
-		bbmaxx = -1 * std::numeric_limits<double>::infinity();
-		bbmaxy = -1 * std::numeric_limits<double>::infinity();
-		bbminx = std::numeric_limits<double>::infinity();
-		bbminy = std::numeric_limits<double>::infinity();
-
 		// draw the light sources
 		for (const auto &l : lights)
 		{
-			if (l->x > bbmaxx)
-			bbmaxx = l->x;
-			if (l->y > bbmaxy)
-			bbmaxy = l->y;
-			if (l->x < bbminx)
-			bbminx = l->x;
-			if (l->y < bbminy)
-			bbminy = l->y;
 			glColor4f(1, 1, 0, l->intensity);
 			DrawDisk(l->x, l->y, 0.05, NULL);
 		}
-
-		b2CircleShape lightCircle;
-		lightCircle.m_p.Set(0.0f, 0.0f);         //position, relative to body position
-    	lightCircle.m_radius = 0.6 / 2.0; //radius
-		b2FixtureDef fixtureDeflight;
-		fixtureDeflight.shape = &lightCircle;	
-		
-		fixtureDeflight.density = 0;
-		fixtureDeflight.friction = 0;
-		fixtureDeflight.restitution = 0;
-
-		fixtureDeflight.filter.categoryBits = GOAL;
-		fixtureDeflight.filter.maskBits = 0; //everything
-		// BOX | ROBOT | BOXBOUNDARY | ROBOTBOUNDARY; // everything
-
-		b2BodyDef bodyDeflight;
-		bodyDeflight.type = b2_staticBody;
-
-		b2Body* lightbody = b2world->CreateBody(&bodyDef);
-		lightbody->SetTransform(b2Vec2((bbminx + bbmaxx)/2.0 + 0.5, (bbminy + bbmaxy)/2.0 + 0.5), 0);
-
-		lightbody->CreateFixture(&fixtureDeflight);
-		DrawBody(lightbody, c_yellow, size);
-
-		printf("The lightcenter is %f, %f\n", (bbminx + bbmaxx)/2.0 + 0.5, (bbminy + bbmaxy)/2.0 + 0.5);
 
 		for (int y = 0; y < side; y++)
 			for (int x = 0; x < side; x++)
