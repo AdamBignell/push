@@ -3,6 +3,7 @@
 #include <sstream>
 #include <stdio.h>
 #include <string>
+#include <stdlib.h>
 
 World::World(double width, double height, int numLights, int drawInterval) : steps(0),
                                                               width(width),
@@ -612,19 +613,20 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
     }
 
     // We overfilled. Try again.
-    if (goals.size() != boxes.size() && callNum < 100)
+    if (goals.size() != boxes.size() && callNum < 20)
     {
       if (havePolygon)
       {
-        goalPolygon->scale(1.01);
+        goalPolygon->scale(1.00 + (rand() % 10)/100);
         goals.clear();
         populateGoals(RADMIN, callNum + 1);
+        printf("Number of goals: %i\n", (int)goals.size());
         return true;
       }
       else
       {
         // We underfilled. Try again
-        RADMIN *= 1.01;
+        RADMIN *= 1.00 + (rand() % 10)/100;
         goals.clear();
         populateGoals(RADMIN, callNum + 1);
         printf("Number of goals: %i\n", (int)goals.size());
