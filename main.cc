@@ -459,7 +459,7 @@ int main(int argc, char *argv[])
 
   fprintf(stderr, "Initializing.");
   world->populateGoals(RADMIN, 0);
-  printf("\nNumber of goals: %i\n", (int)world->goals.size());
+  printf("\nNumber of goals: %i\n", (int)world->numGoals);
 
   // These lines prime the polygon
   if (world->havePolygon && flare > 0)

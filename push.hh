@@ -124,7 +124,9 @@ public:
   std::vector<Light *> lights;
   std::vector<Box *> boxes;
   std::vector<Robot *> robots;
-  std::vector<Goal *> goals;
+  // We want to index this by position to avoid an O(n^2) checking algorithm
+  std::vector<std::vector<std::vector<Goal *>>> goals;
+  double numGoals; // Necessary since we can't just call goals.size()
 
   World(double width, double height, int numLights, int drawInterval);
 
@@ -181,6 +183,9 @@ public:
   // Note that all the information we need is part of the world already
   // Hence the argumentless call
   bool populateGoals(double RADMIN, int callNum);
+
+  // Just factor out the double loop
+  void clearGoals();
 };
 
 class GuiWorld : public World

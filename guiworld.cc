@@ -224,8 +224,14 @@ void GuiWorld::Step(double timestep)
 		}
 
 		// draw the goals
-		for (auto &g : goals)
-			DrawBody(g->body, c_royalblue, g->size);
+		for (auto &col: goals)
+		{
+			for (auto &row : col)
+			{
+				for (auto &g : row)
+					DrawBody(g->body, c_royalblue, g->size);
+			}
+		}
 
 		// draw the walls
 		for (int i = 0; i < 4; i++)

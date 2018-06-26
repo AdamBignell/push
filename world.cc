@@ -38,6 +38,19 @@ World::World(double width, double height, int numLights, int drawInterval) : ste
     boxWall[i]->CreateFixture(&fixtureDef);
   }
 
+  // Populate the goals
+  numGoals = 0;
+  for (int i = 0; i < width; ++i)
+  {
+    std::vector<std::vector<Goal*>> goalCol;
+    for (int j = 0; j < height; ++j)
+    {
+      std::vector<Goal*> goalList;
+      goalCol.push_back(goalList);
+    }
+    goals.push_back(goalCol);
+  }
+
   // Zoomed in
   // boxWall[0]->SetTransform(b2Vec2(width / 2, height / 4.0), 0);
   // boxWall[1]->SetTransform(b2Vec2(width / 2, height - height / 4.0), 0);
@@ -106,7 +119,8 @@ void World::AddBox(Box *b)
 
 void World::AddGoal(Goal *g)
 {
-  goals.push_back(g);
+  goals[g->x][g->y].push_back(g);
+  numGoals++;
 }
 
 void World::SetLightIntensity(size_t index, double intensity)
@@ -570,13 +584,13 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
           if (goalPolygon->pointInsidePoly(j, i))
           {
             AddGoal(new Goal(*this, j, i, d, Goal::SHAPE_HEX));
-            if (goals.size() == boxes.size())
+            if (numGoals == boxes.size())
             {
               // Limit this so we don't loop forever
-              if (goalPolygon->getArea() - goals.size() * oneBoxArea > oneBoxArea && callNum != 20)
+              if (goalPolygon->getArea() - numGoals * oneBoxArea > oneBoxArea && callNum != 20)
               {
                 goalPolygon->scale(0.99);
-                goals.clear();
+                clearGoals();
                 populateGoals(RADMIN, callNum + 1); /**/
                 return true;
               }
@@ -590,14 +604,14 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
           if (sqrt((cx-j)*(cx-j) + (cy-i)*(cy-i)) < RADMIN)
           {
             AddGoal(new Goal(*this, j, i, d, Goal::SHAPE_HEX));
-            if (goals.size() == boxes.size())
+            if (numGoals == boxes.size())
             {
               // Limit this so we don't loop forever
-              if (M_PI*(RADMIN*RADMIN) - goals.size() * oneBoxArea > oneBoxArea && callNum != 20)
+              if (M_PI*(RADMIN*RADMIN) - numGoals * oneBoxArea > oneBoxArea && callNum != 20)
               {
                 // We underfilled. Try again
                 RADMIN *= 0.99;
-                goals.clear();
+                clearGoals();
                 populateGoals(RADMIN, callNum + 1); /**/
                 return true;
               }
@@ -615,20 +629,19 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
     }
 
     // We overfilled. Try again.
-    if (goals.size() != boxes.size() && callNum < 20)
+    if (numGoals != boxes.size() && callNum < 20)
     {
-      if (havePolygon)
+      if (havePolygon) // Polygon
       {
         goalPolygon->scale(1.00 + (rand() % 10)/100);
-        goals.clear();
+        clearGoals();
         populateGoals(RADMIN, callNum + 1); /**/
         return true;
       }
-      else
+      else // Circle
       {
-        // We underfilled. Try again
         RADMIN *= 1.00 + (rand() % 10)/100;
-        goals.clear();
+        clearGoals();
         populateGoals(RADMIN, callNum + 1); /**/
         return true;
       }
@@ -644,29 +657,54 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
 		bbmaxy = -1 * std::numeric_limits<double>::infinity();
 		bbminx = std::numeric_limits<double>::infinity();
 		bbminy = std::numeric_limits<double>::infinity();
+
 		double size = 0;
-		for (auto &g : goals)
-		{
-			if (g->x > bbmaxx)
-			  bbmaxx = g->x;
-			if (g->y > bbmaxy)
-			  bbmaxy = g->y;
-			if (g->x < bbminx)
-			  bbminx = g->x;
-			if (g->y < bbminy)
-			  bbminy = g->y;
+    for (auto &col: goals)
+    {
+      for (auto &row : col)
+      {
+        for (auto &g : row)
+        {
+          if (g->x > bbmaxx)
+            bbmaxx = g->x;
+          if (g->y > bbmaxy)
+            bbmaxy = g->y;
+          if (g->x < bbminx)
+            bbminx = g->x;
+          if (g->y < bbminy)
+            bbminy = g->y;
+        }
+      }
 		}
 
     // Adjust to match the center of contraction for the lights
     double dx = trueCx - (bbmaxx+bbminx)/2.0;
     double dy = trueCy - (bbmaxy+bbminy)/2.0;
 
-    for (auto& g: goals)
+    for (auto &col: goals)
     {
-      g->x += dx;
-      g->y += dy;
-      g->body->SetTransform(b2Vec2(g->x, g->y), 0);
+      for (auto &row : col)
+      {
+        for (auto &g : row)
+        {
+          g->x += dx;
+          g->y += dy;
+          g->body->SetTransform(b2Vec2(g->x, g->y), 0);
+        }
+      }
     }
 
     return true;
+  }
+
+  void World::clearGoals()
+  {
+    for (auto &col: goals)
+    {
+      for (auto &row : col)
+      {
+        row.clear();
+      }
+    }
+    numGoals = 0;
   }
