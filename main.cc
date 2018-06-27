@@ -294,12 +294,11 @@ int main(int argc, char *argv[])
   World* world = NULL;
   if (useGui)
   {
-    world = new GuiWorld(WIDTH, HEIGHT, GUITIME, LIGHTS);
+    world = new GuiWorld(WIDTH, HEIGHT, LIGHTS, GUITIME);
   }
   else
   {
-    world = new World(WIDTH, HEIGHT, GUITIME, LIGHTS);
-    fprintf(stderr, "\nRunning");
+    world = new World(WIDTH, HEIGHT, LIGHTS, GUITIME);
   }
 
   // Create objects
@@ -373,9 +372,6 @@ int main(int argc, char *argv[])
     return 0; // Finished reading the file, close
   }
 
-  if (outputFileName != "")
-    world->saveWorldHeader(outputFileName);
-
   // Read the polygon from the input file if we have one
   if (pFileName != "")
   {
@@ -407,7 +403,6 @@ int main(int argc, char *argv[])
 
 
   // Various declarations for main loop
-  
   double delta = 0.6;
   double sdelta = 0.975; // 'scale' delta. Multiplicative delta, not additive
   double xdelta = 0;
@@ -425,9 +420,7 @@ int main(int argc, char *argv[])
   // ring perimeter to actually hit the wall.
   double RADMAX = (WIDTH / 2.0) * (0.75);
 
-  // Default is 5
-  // We should set the RAD-Min intelligently
-  // by matching the desired area (implicitly defined)
+  // Set RAD-Min by matching the desired area (implicitly defined)
   double boxArea;
   if (box_type == Box::SHAPE_RECT)
     boxArea = box_size*box_size;
@@ -443,10 +436,6 @@ int main(int argc, char *argv[])
   uint64_t maxsteps = 100000L;
 
   // We need to adjust the user polygon to fit the arena
-  // I'm a little uncomfortable switching from dilating to
-  // contracting using radius. It's more 
-  // intuitive to use area directly, but doing so would require
-  // many more calculations. Keep in mind there are alternatives.
   double radius = RADMAX;
   if (world->havePolygon)
   {
@@ -461,12 +450,18 @@ int main(int argc, char *argv[])
   world->populateGoals(RADMIN, 0);
   printf("\nNumber of goals: %i\n", (int)world->numGoals);
 
+  // Must do this after populating goals
+  if (outputFileName != "")
+  {
+    world->saveWorldHeader(outputFileName);
+    world->saveGoalsToFile(outputFileName);
+  }
+
   // These lines prime the polygon
   if (world->havePolygon && flare > 0)
   {
     // Adjust the polygon to account for corners
     // Note that we need to be centered around the origin
-    // hence the double translate
     world->polygon->translate(-goalx, -goaly, true);
     world->polygon->primeCorners(flare);
     world->polygon->translate(goalx, goaly, true);
@@ -484,16 +479,22 @@ int main(int argc, char *argv[])
   // Note that for irregular polygons we define the radius as the shortest distance
   // to any point on the polygon
   int writeState = GUITIME;
+  fprintf(stderr, "\nRunning");
   while (!world->RequestShutdown() && world->steps < maxsteps)
   {
+    // TODO: Refactor this monster of a loop
     if (world->steps % updateRate == 1) // every now and again
     {
+      // Just for reassurnace
       if (!useGui && (world->steps % (updateRate*20) == 1))
         fprintf(stderr, ".");
+      // Are we staying contracted?
       if (holdFor != 0 && holdAtMin)
       {
+        // Don't change radius
         world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH, 1.0 - (holdFor / holdTime));
         holdFor--;
+        // If we are done contracting, we need to grow above RadMin threshold
         if (holdFor == 0)
         {
           if (world->havePolygon)
@@ -501,19 +502,19 @@ int main(int argc, char *argv[])
             while(radius < RADMIN)
             {
               world->polygon->scale(sdelta);
-              radius *= sdelta; // Get us above the threshold to grow
+              radius *= sdelta;
             }
           }
           else
             radius += delta;
         }
       }
-      else
+      else // We aren't holding
       {
         if (radius < RADMIN)
         {
           //delta = -delta; // * 2.0;
-          sdelta = 2-sdelta;
+          sdelta = 2-sdelta; // Switch to expansion
 
           //xdelta = 0.1;
           if (holdAtMin)
@@ -525,7 +526,7 @@ int main(int argc, char *argv[])
         else if (radius > RADMAX)
         {
           //delta = -delta; //downdelta;
-          sdelta = 2-sdelta;
+          sdelta = 2-sdelta; // Switch to contraction
         }
 
         // This shouldn't be an else despite the above
@@ -533,6 +534,8 @@ int main(int argc, char *argv[])
         {
           if (pFileName != "") // proxy to determine if a polygon was supplied
           {
+            // These switch between circle and polygon
+            // Can opt to use e.g. 0.25 instead of 0.5 to make switching radius tighter
             if (radius > RADMAX*0.5 && world->havePolygon && sdelta > 1)
             {
               world->havePolygon = false;
@@ -577,7 +580,9 @@ int main(int argc, char *argv[])
     world->Step(timeStep);
   }
 
-  printf("Completed %lu steps.", world->steps);
+  printf("\nCompleted %lu steps.\n", world->steps);
+  double successRate = world->evaluateSuccess();
+  printf("%f%% of the boxes were in the right position.\n", successRate);
 
   return 0;
 }

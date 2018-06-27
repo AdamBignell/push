@@ -119,7 +119,7 @@ void World::AddBox(Box *b)
 
 void World::AddGoal(Goal *g)
 {
-  goals[g->x][g->y].push_back(g);
+  goals[floor(g->x)][floor(g->y)].push_back(g);
   numGoals++;
 }
 
@@ -345,6 +345,27 @@ void World::saveWorldHeader(std::string saveFileName)
   outfile << "$\n";
 }
 
+void World::saveGoalsToFile(std::string saveFileName)
+{
+  std::ofstream outfile;
+  outfile.open(saveFileName, std::ios_base::app);
+
+  outfile << "GOALS:\n" << "!\n";
+  for (auto &col: goals)
+  {
+    for (auto &row : col)
+    {
+      for (auto &g : row)
+      {
+        // x, y, a, charge
+        outfile << g->x << ' ' << g->y << ' ' << g->size << ' ' <<  g->shape << '\n';
+      }
+    }
+  }
+
+  outfile << "!\n"; // Write a delimeter
+}
+
 // Saves the world state to a JSON file
 void World::appendWorldStateToFile(std::string saveFileName)
 {
@@ -352,6 +373,9 @@ void World::appendWorldStateToFile(std::string saveFileName)
   // worldString = jsonWorld.writeToString(b2world);
   std::ofstream outfile;
   outfile.open(saveFileName, std::ios_base::app);
+
+  // The goals don't change position!
+  // We write them separately and only once
 
   b2Vec2 pose;
   // Write the robot information
@@ -381,7 +405,7 @@ void World::appendWorldStateToFile(std::string saveFileName)
         // x, y, a, intensity
         outfile << light->index << ' ' << light->intensity << '\n';
       }
-    }  
+    }
   // outfile << worldString; // Write the world state
   outfile << "!\n";
   outfile << "$\n";
@@ -421,6 +445,24 @@ void World::updateBoxesFromString(std::string &boxStr)
     b2Vec2 pose(x,y);
     boxes[bDex]->body->SetTransform(pose, a);
     bDex++;
+  }
+}
+
+// Takes the section of goals
+void World::updateGoalsFromString(std::string &goalStr)
+{
+  std::istringstream iss(goalStr);
+  std::string goal;
+  double x, y, size;
+  int shape;
+  while (getline(iss, goal, '\n'))
+  {
+    if (goal == "")
+      continue;
+    std::istringstream indexStr(goal);
+    indexStr >> x >> y >> size >> shape;
+    goals[x][y].push_back(new Goal(this, x, y, size, (Goal::goal_shape_t)shape));
+    ++numGoals;
   }
 }
 
@@ -472,17 +514,18 @@ bool World::loadNextState(std::ifstream& file)
     case 'R':
       getline(sectionStream, lineStr, '!');
       updateRobotsFromString(lineStr);
-    ;
     break;
     case 'B':
       getline(sectionStream, lineStr, '!');
       updateBoxesFromString(lineStr);
-    ;
     break;
     case 'L':
       getline(sectionStream, lineStr, '!');
       updateLightsFromString(lineStr);
-    ;
+    break;
+    case 'G':
+      getline(sectionStream, lineStr, '!');
+      updateGoalsFromString(lineStr);
     break;
     default:
     ;
@@ -583,7 +626,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
         {
           if (goalPolygon->pointInsidePoly(j, i))
           {
-            AddGoal(new Goal(*this, j, i, d, Goal::SHAPE_HEX));
+            AddGoal(new Goal(this, j, i, d, Goal::SHAPE_HEX));
             if (numGoals == boxes.size())
             {
               // Limit this so we don't loop forever
@@ -603,7 +646,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
         {
           if (sqrt((cx-j)*(cx-j) + (cy-i)*(cy-i)) < RADMIN)
           {
-            AddGoal(new Goal(*this, j, i, d, Goal::SHAPE_HEX));
+            AddGoal(new Goal(this, j, i, d, Goal::SHAPE_HEX));
             if (numGoals == boxes.size())
             {
               // Limit this so we don't loop forever
@@ -680,6 +723,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
     // Adjust to match the center of contraction for the lights
     double dx = trueCx - (bbmaxx+bbminx)/2.0;
     double dy = trueCy - (bbmaxy+bbminy)/2.0;
+    fprintf(stderr, "The goals are adjusted by %f, %f\n", dx, dy);
 
     for (auto &col: goals)
     {
@@ -697,6 +741,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
     return true;
   }
 
+  // Just clear all the innermost vectors
   void World::clearGoals()
   {
     for (auto &col: goals)
@@ -707,4 +752,28 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
       }
     }
     numGoals = 0;
+  }
+
+  // Let's check how well we did
+  double World::evaluateSuccess()
+  {
+    double d = boxes[0]->size; // diameter
+    double r = d/2.0; //radius
+    double apothem = sqrt(d*d - r*r)/2.0;
+    double oneBoxArea = (apothem * (r/2.0)) * 6.0;
+    double numCorrect = 0;
+    double dist = 0;
+    for (auto &box : boxes)
+    {
+      b2Vec2 pos = box->body->GetPosition();
+      for (auto &g : goals[floor(pos.x)][floor(pos.y)])
+      {
+        dist = sqrt((g->x - pos.x)*(g->x - pos.x) + (g->y - pos.y)*(g->y - pos.y));
+        if (dist <= r)
+        // At most one goal will be fulfilled by a box since goalSize = boxSize
+          numCorrect++;
+      }
+    }
+
+    return numCorrect / numGoals;
   }

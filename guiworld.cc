@@ -153,7 +153,7 @@ void DrawDisk(double cx, double cy, double r, const double color[3])
 	glEnd();
 }
 
-GuiWorld::GuiWorld(double width, double height, int drawinterval, int numLights) : World(width, height, numLights, draw_interval),
+GuiWorld::GuiWorld(double width, double height, int numLights, int drawinterval) : World(width, height, numLights, draw_interval),
 																	window(NULL),
 																	lights_need_redraw(true)
 {
@@ -223,16 +223,6 @@ void GuiWorld::Step(double timestep)
 			}
 		}
 
-		// draw the goals
-		for (auto &col: goals)
-		{
-			for (auto &row : col)
-			{
-				for (auto &g : row)
-					DrawBody(g->body, c_royalblue, g->size);
-			}
-		}
-
 		// draw the walls
 		for (int i = 0; i < 4; i++)
 			DrawBody(boxWall[i], c_gray, -1);
@@ -254,6 +244,21 @@ void GuiWorld::Step(double timestep)
 
 			DrawBody(r->body, col, r->size);
 		}
+
+		// draw the goals
+		// It is imperative we use 'allGoals' here
+		// as the goal grid is not used in replays
+		for (auto &col: goals)
+		{
+			for (auto &row : col)
+			{
+				for (auto &g : row)
+				{
+					DrawBody(g->body, c_royalblue, g->size);
+				}
+			}
+		}
+				
 
 		// draw a nose on the robot
 		glColor3f(1, 1, 1);

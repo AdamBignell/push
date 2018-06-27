@@ -124,8 +124,10 @@ public:
   std::vector<Light *> lights;
   std::vector<Box *> boxes;
   std::vector<Robot *> robots;
+  
   // We want to index this by position to avoid an O(n^2) checking algorithm
   std::vector<std::vector<std::vector<Goal *>>> goals;
+
   double numGoals; // Necessary since we can't just call goals.size()
 
   World(double width, double height, int numLights, int drawInterval);
@@ -174,10 +176,12 @@ public:
 
   // Saves the world state to a JSON file
   void saveWorldHeader(std::string saveFileName);
+  void saveGoalsToFile(std::string saveFileName);
   void appendWorldStateToFile(std::string saveFileName);
 
   void updateRobotsFromString(std::string &robotStr);
   void updateBoxesFromString(std::string &boxStr);
+  void updateGoalsFromString(std::string &goalStr);
   void updateLightsFromString(std::string &lightStr);
 
   // Note that all the information we need is part of the world already
@@ -186,6 +190,10 @@ public:
 
   // Just factor out the double loop
   void clearGoals();
+
+  // Check how well we did, and return the success
+  // as a double where 0 <= return value <= 1
+  double evaluateSuccess();
 };
 
 class GuiWorld : public World
@@ -200,7 +208,7 @@ public:
 
   GLFWwindow *window;
 
-  GuiWorld(double width, double height, int draw_interval, int numLights);
+  GuiWorld(double width, double height, int numLights, int draw_interval);
   ~GuiWorld();
 
   virtual void Step(double timestep);
@@ -320,5 +328,5 @@ public:
 
   goal_shape_t shape;
 
-  Goal(World &world, double x, double y, double size, goal_shape_t shape);
+  Goal(World *world, double x, double y, double size, goal_shape_t shape);
 };

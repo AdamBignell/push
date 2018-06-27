@@ -2,7 +2,7 @@
 
 #include "push.hh"
 
-Goal::Goal(World &world, double x, double y, double size, goal_shape_t shape) : x(x), y(y), size(size), shape(shape), body(NULL)
+Goal::Goal(World *world, double x, double y, double size, goal_shape_t shape) : x(x), y(y), size(size), shape(shape), body(NULL)
 {
   b2PolygonShape staticBox;
   b2CircleShape staticCircle;
@@ -56,7 +56,7 @@ Goal::Goal(World &world, double x, double y, double size, goal_shape_t shape) : 
   b2BodyDef bodyDef;
   bodyDef.type = b2_staticBody;
 
-  body = world.b2world->CreateBody(&bodyDef);
+  body = world->b2world->CreateBody(&bodyDef);
   body->SetTransform(b2Vec2(x, y), 0);
 
   body->CreateFixture(&fixtureDef);
