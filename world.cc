@@ -723,8 +723,6 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
     // Adjust to match the center of contraction for the lights
     double dx = trueCx - (bbmaxx+bbminx)/2.0;
     double dy = trueCy - (bbmaxy+bbminy)/2.0;
-    fprintf(stderr, "The goals are adjusted by %f, %f\n", dx, dy);
-
     for (auto &col: goals)
     {
       for (auto &row : col)
