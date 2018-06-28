@@ -105,6 +105,7 @@ public:
   double width, height;
   int numLights;
   int draw_interval;
+  double success;
 
   b2Body *boxWall[4];
   b2Body *robotWall[4];
@@ -177,12 +178,14 @@ public:
   // Saves the world state to a JSON file
   void saveWorldHeader(std::string saveFileName);
   void saveGoalsToFile(std::string saveFileName);
+  void saveSuccessMeasure(std::string saveFileName);
   void appendWorldStateToFile(std::string saveFileName);
 
   void updateRobotsFromString(std::string &robotStr);
   void updateBoxesFromString(std::string &boxStr);
   void updateGoalsFromString(std::string &goalStr);
   void updateLightsFromString(std::string &lightStr);
+  void updateSuccessFromString(std::string &lightStr);
 
   // Note that all the information we need is part of the world already
   // Hence the argumentless call

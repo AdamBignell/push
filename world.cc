@@ -38,6 +38,8 @@ World::World(double width, double height, int numLights, int drawInterval) : ste
     boxWall[i]->CreateFixture(&fixtureDef);
   }
 
+  success = -1;
+
   // Populate the goals
   numGoals = 0;
   for (int i = 0; i < width; ++i)
@@ -345,11 +347,24 @@ void World::saveWorldHeader(std::string saveFileName)
   outfile << "$\n";
 }
 
+void World::saveSuccessMeasure(std::string saveFileName)
+{
+  std::ofstream outfile;
+  outfile.open(saveFileName, std::ios_base::app);
+
+  outfile << "Success:\n";
+  outfile << "!\n";
+  outfile << success << '\n';
+  outfile << "!\n";
+  outfile << "$\n";
+}
+
 void World::saveGoalsToFile(std::string saveFileName)
 {
   std::ofstream outfile;
   outfile.open(saveFileName, std::ios_base::app);
 
+  outfile << "!\n"; // Write a delimeter
   outfile << "GOALS:\n" << "!\n";
   for (auto &col: goals)
   {
@@ -454,6 +469,7 @@ void World::updateGoalsFromString(std::string &goalStr)
   std::istringstream iss(goalStr);
   std::string goal;
   double x, y, size;
+  getline(iss, goal, '\n'); // dump the first
   int shape;
   while (getline(iss, goal, '\n'))
   {
@@ -487,6 +503,21 @@ void World::updateLightsFromString(std::string &lightStr)
     std::istringstream indexStr(light);
     indexStr >> index >> intensity;
     SetLightIntensity(index, intensity);
+  }
+}
+
+// Takes a section of boxes and updates the brightness in the world
+void World::updateSuccessFromString(std::string &succStr)
+{
+  double lside = sqrt(numLights);
+  std::istringstream iss(succStr);
+  std::string light;
+  getline(iss, light, '\n'); // dump the first
+  double xdex, ydex;
+  while (getline(iss, light, '\n')) // should only be one
+  {
+    std::istringstream indexStr(light);
+    indexStr >> success;
   }
 }
 
@@ -527,6 +558,9 @@ bool World::loadNextState(std::ifstream& file)
       getline(sectionStream, lineStr, '!');
       updateGoalsFromString(lineStr);
     break;
+    case 'S':
+      getline(sectionStream, lineStr, '!');
+      updateSuccessFromString(lineStr);
     default:
     ;
     }
@@ -772,6 +806,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
           numCorrect++;
       }
     }
-
+    // Capture the success so we can write it out later if need be
+    success = numCorrect / numGoals;
     return numCorrect / numGoals;
   }

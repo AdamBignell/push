@@ -369,6 +369,7 @@ int main(int argc, char *argv[])
       world->Step(timeStep);
       world->paused = true;
     }
+    printf("%f%% of the boxes were in the right position.\n", world->success * 100);
     return 0; // Finished reading the file, close
   }
 
@@ -582,7 +583,9 @@ int main(int argc, char *argv[])
 
   printf("\nCompleted %lu steps.\n", world->steps);
   double successRate = world->evaluateSuccess();
-  printf("%f%% of the boxes were in the right position.\n", successRate);
+  if (outputFileName != "")
+    world->saveSuccessMeasure(outputFileName);
+  printf("%f%% of the boxes were in the right position.\n", successRate * 100);
 
   return 0;
 }
