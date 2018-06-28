@@ -434,7 +434,7 @@ int main(int argc, char *argv[])
     boxArea = (apothem * (box_size/4.0)) * 6.0;
   }
 
-  uint64_t maxsteps = 100000L;
+  uint64_t maxsteps = 10000L;
 
   // We need to adjust the user polygon to fit the arena
   double radius = RADMAX;
@@ -448,7 +448,8 @@ int main(int argc, char *argv[])
   double RADMIN = world->GetRadMin(BOXES, boxArea, robot_size, world->polygon);
 
   fprintf(stderr, "Initializing.");
-  world->populateGoals(RADMIN, 0);
+  std::vector<Goal*> tempGoals; //For recursion purposes
+  world->populateGoals(RADMIN, 0, tempGoals);
   printf("\nNumber of goals: %i\n", (int)world->numGoals);
 
   // Must do this after populating goals

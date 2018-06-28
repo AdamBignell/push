@@ -593,7 +593,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
   }
 }
 
-bool World::populateGoals(double RADMIN, int callNum)
+bool World::populateGoals(double RADMIN, int callNum, std::vector<Goal*>& tempGoals)
 {
   // The recursive sections marked below by ** are pretty inefficient
   // but are extremely general. They will pack as well as possible
@@ -615,7 +615,7 @@ bool World::populateGoals(double RADMIN, int callNum)
   double bbminx = std::numeric_limits<double>::infinity();
   double bbminy = std::numeric_limits<double>::infinity();
 
-  getBoundingBox(goalPolygon->vertices, bbmaxx, bbmaxy, bbminx, bbminy);
+  getBoundingBox(goalPolygon->vertices, bbmaxx, bbmaxy, bbminx, bbminy, RADMIN);
 
   bbminx += apothem;
   bbminy += r;
@@ -639,15 +639,15 @@ bool World::populateGoals(double RADMIN, int callNum)
       {
         if (goalPolygon->pointInsidePoly(j, i))
         {
-          AddGoal(new Goal(this, j, i, d, Goal::SHAPE_HEX));
-          if (numGoals == boxes.size())
+          tempGoals.push_back(new Goal(this, j, i, d, Goal::SHAPE_HEX));
+          if (tempGoals.size() == boxes.size())
           {
             // Limit this so we don't loop forever
-            if (goalPolygon->getArea() - numGoals * oneBoxArea > oneBoxArea && callNum != 20)
+            if (goalPolygon->getArea() - tempGoals.size() * oneBoxArea > oneBoxArea && callNum != 20)
             {
               goalPolygon->scale(0.99);
-              clearGoals();
-              populateGoals(RADMIN, callNum + 1); /**/
+              tempGoals.clear();
+              populateGoals(RADMIN, callNum + 1, tempGoals); /**/
               return true;
             }
             else
@@ -659,16 +659,16 @@ bool World::populateGoals(double RADMIN, int callNum)
       {
         if (sqrt((cx-j)*(cx-j) + (cy-i)*(cy-i)) < RADMIN)
         {
-          AddGoal(new Goal(this, j, i, d, Goal::SHAPE_HEX));
-          if (numGoals == boxes.size())
+          tempGoals.push_back(new Goal(this, j, i, d, Goal::SHAPE_HEX));
+          if (tempGoals.size()  == boxes.size())
           {
             // Limit this so we don't loop forever
-            if (M_PI*(RADMIN*RADMIN) - numGoals * oneBoxArea > oneBoxArea && callNum != 20)
+            if (M_PI*(RADMIN*RADMIN) - tempGoals.size() * oneBoxArea > oneBoxArea && callNum != 20)
             {
               // We underfilled. Try again
               RADMIN *= 0.99;
-              clearGoals();
-              populateGoals(RADMIN, callNum + 1); /**/
+              tempGoals.clear();
+              populateGoals(RADMIN, callNum + 1, tempGoals); /**/
               return true;
             }
             else
@@ -685,27 +685,42 @@ bool World::populateGoals(double RADMIN, int callNum)
   }
 
   // We overfilled. Try again.
-  if (numGoals != boxes.size() && callNum < 20)
+  if (tempGoals.size() != boxes.size() && callNum < 20)
   {
     if (havePolygon) // Polygon
     {
       goalPolygon->scale(1.00 + (rand() % 10)/100);
-      clearGoals();
-      populateGoals(RADMIN, callNum + 1); /**/
+      tempGoals.clear();
+      populateGoals(RADMIN, callNum + 1, tempGoals); /**/
       return true;
     }
     else // Circle
     {
       RADMIN *= 1.00 + (rand() % 10)/100;
-      clearGoals();
-      populateGoals(RADMIN, callNum + 1); /**/
+      tempGoals.clear();
+      populateGoals(RADMIN, callNum + 1, tempGoals); /**/
       return true;
     }
   }
 
+  // We only make it here if we are finalizing
+  
   // Matches the goals to the center of contraction
   // Often this is a fractional value
-  recenterGoals();
+  recenterGoals(tempGoals);
+
+  // Ensures that the only goals we add are post adjustments
+  for (auto &g : tempGoals)
+  {
+    AddGoal(new Goal(this, g->x, g->y, g->size, g->shape));
+  }
+  tempGoals.clear();
+
+  while (boxes.size() != numGoals)
+  {
+    // Equalize boxes and goals for fairness
+    boxes.pop_back();
+  }
 
   return true;
 }
@@ -732,15 +747,45 @@ double World::evaluateSuccess()
   double oneBoxArea = (apothem * (r/2.0)) * 6.0;
   double numCorrect = 0;
   double dist = 0;
+
+  bool gotSuccess = false;
+
+  double xmin,xmax,ymin,ymax;
   for (auto &box : boxes)
   {
     b2Vec2 pos = box->body->GetPosition();
-    for (auto &g : goals[floor(pos.x)][floor(pos.y)])
+    xmax = floor(pos.x) + 3;
+    ymax = floor(pos.y) + 3;
+    xmin = floor(pos.x) - 3;
+    ymin = floor(pos.y) - 3;
+    for (int j = ymin; j <= ymax; ++j)
     {
-      dist = sqrt((g->x - pos.x)*(g->x - pos.x) + (g->y - pos.y)*(g->y - pos.y));
-      if (dist <= r)
-      // At most one goal will be fulfilled by a box since goalSize = boxSize
-        numCorrect++;
+      for (int i = xmin; i <= xmax; ++i)
+      {
+        for (int k = 0; k < goals[i][j].size(); ++k)
+        {
+          Goal* g = goals[i][j][k];
+          dist = sqrt((g->x - pos.x)*(g->x - pos.x) + (g->y - pos.y)*(g->y - pos.y));
+          if (dist <= apothem)
+          {
+            // At most one goal will be fulfilled by a box since goalSize = boxSize
+            numCorrect++;
+            goals[i][j].erase(goals[i][j].begin() + k);
+            gotSuccess = true;
+          }
+          if (gotSuccess)
+            break;
+        }
+        if (gotSuccess)
+          break;
+      }
+      if (gotSuccess)
+        break;
+    }
+    if (gotSuccess)
+    {
+      gotSuccess = false;
+      continue;
     }
   }
   // Capture the success so we can write it out later if need be
@@ -748,7 +793,7 @@ double World::evaluateSuccess()
   return numCorrect / numGoals;
 }
 
-void World::recenterGoals()
+void World::recenterGoals(std::vector<Goal*>& tempGoals)
 {
   double ldx = sqrt(numLights)/width/2.0;
   double ldy = sqrt(numLights)/height/2.0;
@@ -762,44 +807,33 @@ void World::recenterGoals()
   double bbminy = std::numeric_limits<double>::infinity();
 
   double size = 0;
-  for (auto &col: goals)
+  for (auto &g: tempGoals)
   {
-    for (auto &row : col)
-    {
-      for (auto &g : row)
-      {
-        if (g->x > bbmaxx)
-          bbmaxx = g->x;
-        if (g->y > bbmaxy)
-          bbmaxy = g->y;
-        if (g->x < bbminx)
-          bbminx = g->x;
-        if (g->y < bbminy)
-          bbminy = g->y;
-      }
-    }
+    if (g->x > bbmaxx)
+      bbmaxx = g->x;
+    if (g->y > bbmaxy)
+      bbmaxy = g->y;
+    if (g->x < bbminx)
+      bbminx = g->x;
+    if (g->y < bbminy)
+      bbminy = g->y;
   }
 
   // Adjust to match the center of contraction for the lights
   double dx = trueCx - (bbmaxx+bbminx)/2.0;
   double dy = trueCy - (bbmaxy+bbminy)/2.0;
-  for (auto &col: goals)
+  for (auto &g: tempGoals)
   {
-    for (auto &row : col)
-    {
-      for (auto &g : row)
-      {
-        g->x += dx;
-        g->y += dy;
-        g->body->SetTransform(b2Vec2(g->x, g->y), 0);
-      }
-    }
+    g->x += dx;
+    g->y += dy;
+    g->body->SetTransform(b2Vec2(g->x, g->y), 0);
   }
 }
 
 template<typename T>
-void World::getBoundingBox(std::vector<T> vector, double& bbmaxx, double& bbmaxy, double& bbminx, double& bbminy)
+void World::getBoundingBox(std::vector<T> vector, double& bbmaxx, double& bbmaxy, double& bbminx, double& bbminy, double radius)
 {
+  // Note that this requires a pretty specific format of vector
   if (havePolygon)
   {
     for (auto v : vector)
@@ -816,9 +850,9 @@ void World::getBoundingBox(std::vector<T> vector, double& bbmaxx, double& bbmaxy
   }
   else
   {
-    bbmaxx = width;
-    bbmaxy = height;
-    bbminx = 0;
-    bbminy = 0;
+    bbmaxx = width/2.0 + radius;
+    bbmaxy = height/2.0 + radius;
+    bbminx = width/2.0 - radius;
+    bbminy = height/2.0 - radius;
   }
 }
