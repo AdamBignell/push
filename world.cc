@@ -593,220 +593,232 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
   }
 }
 
-  bool World::populateGoals(double RADMIN, int callNum)
+bool World::populateGoals(double RADMIN, int callNum)
+{
+  // The recursive sections marked below by ** are pretty inefficient
+  // but are extremely general. They will pack as well as possible
+  // given the parameters we have been given. I think this is
+  // reasonable since we only call this function once.
+  fprintf(stderr, ".");
+
+  // The below assumes we are packing hexagons
+  double cx = ceil(width/2.0);
+  double cy = ceil(height/2.0);
+  double d = boxes[0]->size; // diameter
+  double r = d/2.0; //radius
+  double apothem = sqrt(d*d - r*r)/2.0;
+  double oneBoxArea = (apothem * (r/2.0)) * 6.0;
+
+  // bounding box
+  double bbmaxx = -1 * std::numeric_limits<double>::infinity();
+  double bbmaxy = -1 * std::numeric_limits<double>::infinity();
+  double bbminx = std::numeric_limits<double>::infinity();
+  double bbminy = std::numeric_limits<double>::infinity();
+
+  getBoundingBox(goalPolygon->vertices, bbmaxx, bbmaxy, bbminx, bbminy);
+
+  bbminx += apothem;
+  bbminy += r;
+
+  // This looks like a scary double for-loop but it's just
+  // iterating through the centers of the hexagons that tile the arena
+  // The i increment is how far up from hexagon center the next row of centers is
+  double j, i = 0;
+  int row;
+  bool finished = false;
+  for (i = bbminy; i < bbmaxy; i += (r + (r/2.0)))
   {
-    // The recursive sections marked below by ** are pretty inefficient
-    // but are extremely general. They will pack as well as possible
-    // given the parameters we have been given. I think this is
-    // reasonable since we only call this function once.
-
-    fprintf(stderr, ".");
-
-    // The below assumes we are packing hexagons
-    double cx = ceil(width/2.0);
-    double cy = ceil(height/2.0);
-    double d = boxes[0]->size; // diameter
-    double r = d/2.0; //radius
-    double apothem = sqrt(d*d - r*r)/2.0;
-    double oneBoxArea = (apothem * (r/2.0)) * 6.0;
-
-    // bounding box
-    double bbmaxx = -1 * std::numeric_limits<double>::infinity();
-    double bbmaxy = -1 * std::numeric_limits<double>::infinity();
-    double bbminx = std::numeric_limits<double>::infinity();
-    double bbminy = std::numeric_limits<double>::infinity();
-
-    if (havePolygon)
-    {
-      for (auto v : goalPolygon->vertices)
-      {
-        if (v.x > bbmaxx)
-          bbmaxx = v.x;
-        if (v.y > bbmaxy)
-          bbmaxy = v.y;
-        if (v.x < bbminx)
-          bbminx = v.x;
-        if (v.y < bbminy)
-          bbminy = v.y;
-      }
-
-      bbminx += apothem;
-      bbminy += r;
-    }
+    // The j increment is the horizontal distance to the next center
+    if (row % 2 == 0)
+      j = bbminx;
     else
+      j = bbminx - apothem;
+    for (; j < bbmaxx; j += 2*apothem)
     {
-      bbmaxx = width;
-      bbmaxy = height;
-      bbminx = 0;
-      bbminy = 0;
-    }
-
-    // This looks like a scary double for-loop but it's just
-    // iterating through the centers of the hexagons that tile the arena
-    // The i increment is how far up from hexagon center the next row of centers is
-    double j, i = 0;
-    int row;
-    bool finished = false;
-    for (i = bbminy; i < bbmaxy; i += (r + (r/2.0)))
-    {
-      // The j increment is the horizontal distance to the next center
-      if (row % 2 == 0)
-        j = bbminx;
-      else
-        j = bbminx - apothem;
-      for (; j < bbmaxx; j += 2*apothem)
+      if (havePolygon) // User supplied a polygon
       {
-        if (havePolygon) // User supplied a polygon
+        if (goalPolygon->pointInsidePoly(j, i))
         {
-          if (goalPolygon->pointInsidePoly(j, i))
+          AddGoal(new Goal(this, j, i, d, Goal::SHAPE_HEX));
+          if (numGoals == boxes.size())
           {
-            AddGoal(new Goal(this, j, i, d, Goal::SHAPE_HEX));
-            if (numGoals == boxes.size())
+            // Limit this so we don't loop forever
+            if (goalPolygon->getArea() - numGoals * oneBoxArea > oneBoxArea && callNum != 20)
             {
-              // Limit this so we don't loop forever
-              if (goalPolygon->getArea() - numGoals * oneBoxArea > oneBoxArea && callNum != 20)
-              {
-                goalPolygon->scale(0.99);
-                clearGoals();
-                populateGoals(RADMIN, callNum + 1); /**/
-                return true;
-              }
-              else
-                finished = true;
+              goalPolygon->scale(0.99);
+              clearGoals();
+              populateGoals(RADMIN, callNum + 1); /**/
+              return true;
             }
+            else
+              finished = true;
           }
         }
-        else // Goal is a circle
+      }
+      else // Goal is a circle
+      {
+        if (sqrt((cx-j)*(cx-j) + (cy-i)*(cy-i)) < RADMIN)
         {
-          if (sqrt((cx-j)*(cx-j) + (cy-i)*(cy-i)) < RADMIN)
+          AddGoal(new Goal(this, j, i, d, Goal::SHAPE_HEX));
+          if (numGoals == boxes.size())
           {
-            AddGoal(new Goal(this, j, i, d, Goal::SHAPE_HEX));
-            if (numGoals == boxes.size())
+            // Limit this so we don't loop forever
+            if (M_PI*(RADMIN*RADMIN) - numGoals * oneBoxArea > oneBoxArea && callNum != 20)
             {
-              // Limit this so we don't loop forever
-              if (M_PI*(RADMIN*RADMIN) - numGoals * oneBoxArea > oneBoxArea && callNum != 20)
-              {
-                // We underfilled. Try again
-                RADMIN *= 0.99;
-                clearGoals();
-                populateGoals(RADMIN, callNum + 1); /**/
-                return true;
-              }
-              else
-                finished = true;
+              // We underfilled. Try again
+              RADMIN *= 0.99;
+              clearGoals();
+              populateGoals(RADMIN, callNum + 1); /**/
+              return true;
             }
+            else
+              finished = true;
           }
         }
-        if (finished)
-          break;
       }
       if (finished)
         break;
-      ++row;
     }
-
-    // We overfilled. Try again.
-    if (numGoals != boxes.size() && callNum < 20)
-    {
-      if (havePolygon) // Polygon
-      {
-        goalPolygon->scale(1.00 + (rand() % 10)/100);
-        clearGoals();
-        populateGoals(RADMIN, callNum + 1); /**/
-        return true;
-      }
-      else // Circle
-      {
-        RADMIN *= 1.00 + (rand() % 10)/100;
-        clearGoals();
-        populateGoals(RADMIN, callNum + 1); /**/
-        return true;
-      }
-    }
-
-    double ldx = sqrt(numLights)/width/2.0;
-    double ldy = sqrt(numLights)/height/2.0;
-    double trueCx = (width / 2.0) + ldx;
-    double trueCy = (height / 2.0) + ldy;
-
-    // Find the center of the goal centers
-		bbmaxx = -1 * std::numeric_limits<double>::infinity();
-		bbmaxy = -1 * std::numeric_limits<double>::infinity();
-		bbminx = std::numeric_limits<double>::infinity();
-		bbminy = std::numeric_limits<double>::infinity();
-
-		double size = 0;
-    for (auto &col: goals)
-    {
-      for (auto &row : col)
-      {
-        for (auto &g : row)
-        {
-          if (g->x > bbmaxx)
-            bbmaxx = g->x;
-          if (g->y > bbmaxy)
-            bbmaxy = g->y;
-          if (g->x < bbminx)
-            bbminx = g->x;
-          if (g->y < bbminy)
-            bbminy = g->y;
-        }
-      }
-		}
-
-    // Adjust to match the center of contraction for the lights
-    double dx = trueCx - (bbmaxx+bbminx)/2.0;
-    double dy = trueCy - (bbmaxy+bbminy)/2.0;
-    for (auto &col: goals)
-    {
-      for (auto &row : col)
-      {
-        for (auto &g : row)
-        {
-          g->x += dx;
-          g->y += dy;
-          g->body->SetTransform(b2Vec2(g->x, g->y), 0);
-        }
-      }
-    }
-
-    return true;
+    if (finished)
+      break;
+    ++row;
   }
+
+  // We overfilled. Try again.
+  if (numGoals != boxes.size() && callNum < 20)
+  {
+    if (havePolygon) // Polygon
+    {
+      goalPolygon->scale(1.00 + (rand() % 10)/100);
+      clearGoals();
+      populateGoals(RADMIN, callNum + 1); /**/
+      return true;
+    }
+    else // Circle
+    {
+      RADMIN *= 1.00 + (rand() % 10)/100;
+      clearGoals();
+      populateGoals(RADMIN, callNum + 1); /**/
+      return true;
+    }
+  }
+
+  // Matches the goals to the center of contraction
+  // Often this is a fractional value
+  recenterGoals();
+
+  return true;
+}
 
   // Just clear all the innermost vectors
-  void World::clearGoals()
+void World::clearGoals()
+{
+  for (auto &col: goals)
   {
-    for (auto &col: goals)
+    for (auto &row : col)
     {
-      for (auto &row : col)
+      row.clear();
+    }
+  }
+  numGoals = 0;
+}
+
+// Let's check how well we did
+double World::evaluateSuccess()
+{
+  double d = boxes[0]->size; // diameter
+  double r = d/2.0; //radius
+  double apothem = sqrt(d*d - r*r)/2.0;
+  double oneBoxArea = (apothem * (r/2.0)) * 6.0;
+  double numCorrect = 0;
+  double dist = 0;
+  for (auto &box : boxes)
+  {
+    b2Vec2 pos = box->body->GetPosition();
+    for (auto &g : goals[floor(pos.x)][floor(pos.y)])
+    {
+      dist = sqrt((g->x - pos.x)*(g->x - pos.x) + (g->y - pos.y)*(g->y - pos.y));
+      if (dist <= r)
+      // At most one goal will be fulfilled by a box since goalSize = boxSize
+        numCorrect++;
+    }
+  }
+  // Capture the success so we can write it out later if need be
+  success = numCorrect / numGoals;
+  return numCorrect / numGoals;
+}
+
+void World::recenterGoals()
+{
+  double ldx = sqrt(numLights)/width/2.0;
+  double ldy = sqrt(numLights)/height/2.0;
+  double trueCx = (width / 2.0) + ldx;
+  double trueCy = (height / 2.0) + ldy;
+
+  // Find the center of the goal centers
+  double bbmaxx = -1 * std::numeric_limits<double>::infinity();
+  double bbmaxy = -1 * std::numeric_limits<double>::infinity();
+  double bbminx = std::numeric_limits<double>::infinity();
+  double bbminy = std::numeric_limits<double>::infinity();
+
+  double size = 0;
+  for (auto &col: goals)
+  {
+    for (auto &row : col)
+    {
+      for (auto &g : row)
       {
-        row.clear();
+        if (g->x > bbmaxx)
+          bbmaxx = g->x;
+        if (g->y > bbmaxy)
+          bbmaxy = g->y;
+        if (g->x < bbminx)
+          bbminx = g->x;
+        if (g->y < bbminy)
+          bbminy = g->y;
       }
     }
-    numGoals = 0;
   }
 
-  // Let's check how well we did
-  double World::evaluateSuccess()
+  // Adjust to match the center of contraction for the lights
+  double dx = trueCx - (bbmaxx+bbminx)/2.0;
+  double dy = trueCy - (bbmaxy+bbminy)/2.0;
+  for (auto &col: goals)
   {
-    double d = boxes[0]->size; // diameter
-    double r = d/2.0; //radius
-    double apothem = sqrt(d*d - r*r)/2.0;
-    double oneBoxArea = (apothem * (r/2.0)) * 6.0;
-    double numCorrect = 0;
-    double dist = 0;
-    for (auto &box : boxes)
+    for (auto &row : col)
     {
-      b2Vec2 pos = box->body->GetPosition();
-      for (auto &g : goals[floor(pos.x)][floor(pos.y)])
+      for (auto &g : row)
       {
-        dist = sqrt((g->x - pos.x)*(g->x - pos.x) + (g->y - pos.y)*(g->y - pos.y));
-        if (dist <= r)
-        // At most one goal will be fulfilled by a box since goalSize = boxSize
-          numCorrect++;
+        g->x += dx;
+        g->y += dy;
+        g->body->SetTransform(b2Vec2(g->x, g->y), 0);
       }
     }
-    // Capture the success so we can write it out later if need be
-    success = numCorrect / numGoals;
-    return numCorrect / numGoals;
   }
+}
+
+template<typename T>
+void World::getBoundingBox(std::vector<T> vector, double& bbmaxx, double& bbmaxy, double& bbminx, double& bbminy)
+{
+  if (havePolygon)
+  {
+    for (auto v : vector)
+    {
+      if (v.x > bbmaxx)
+        bbmaxx = v.x;
+      if (v.y > bbmaxy)
+        bbmaxy = v.y;
+      if (v.x < bbminx)
+        bbminx = v.x;
+      if (v.y < bbminy)
+        bbminy = v.y;
+    }
+  }
+  else
+  {
+    bbmaxx = width;
+    bbmaxy = height;
+    bbminx = 0;
+    bbminy = 0;
+  }
+}

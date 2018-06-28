@@ -190,6 +190,10 @@ public:
   // Note that all the information we need is part of the world already
   // Hence the argumentless call
   bool populateGoals(double RADMIN, int callNum);
+  void recenterGoals();
+
+  template<typename T>
+  void getBoundingBox(std::vector<T> vector, double& bbmaxx, double& bbmaxy, double& bbminx, double& bbminy);
 
   // Just factor out the double loop
   void clearGoals();

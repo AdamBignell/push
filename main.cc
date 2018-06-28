@@ -499,18 +499,16 @@ int main(int argc, char *argv[])
         if (holdFor == 0)
         {
           if (world->havePolygon)
-          {
             while(radius < RADMIN)
             {
               world->polygon->scale(sdelta);
               radius *= sdelta;
             }
-          }
           else
             radius += delta;
         }
       }
-      else // We aren't holding
+      else // We aren't staying contracted
       {
         if (radius < RADMIN)
         {
@@ -525,10 +523,8 @@ int main(int argc, char *argv[])
         }
 
         else if (radius > RADMAX)
-        {
-          //delta = -delta; //downdelta;
           sdelta = 2-sdelta; // Switch to contraction
-        }
+          //delta = -delta; //downdelta;
 
         // This shouldn't be an else despite the above
         if (radius <= RADMAX)
@@ -538,13 +534,9 @@ int main(int argc, char *argv[])
             // These switch between circle and polygon
             // Can opt to use e.g. 0.25 instead of 0.5 to make switching radius tighter
             if (radius > RADMAX*0.5 && world->havePolygon && sdelta > 1)
-            {
               world->havePolygon = false;
-            }
             else if (radius < RADMAX*0.5 && !world->havePolygon && sdelta < 1)
-            {
               world->havePolygon = true;
-            }
           }
           // Turns all necessary lights on for a specific amount of contraction (radius)
           // The polygon will automatically be used if it is well defined
