@@ -170,8 +170,8 @@ int main(int argc, char *argv[])
       {
         if (argv[i+1][0] != '-')
         {
-          argv[i+1] = NULL;
-          argc--;
+          fprintf(stderr, "The '-x' flag does not take an argument. Aborting...\n");
+          return 0;
         }
       }
       argc--;
