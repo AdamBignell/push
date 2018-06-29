@@ -191,6 +191,7 @@ public:
   // Hence the argumentless call
   bool populateGoals(double RADMIN, int callNum, std::vector<Goal*>& tempGoals);
   void recenterGoals(std::vector<Goal*>& tempGoals);
+  void unfulfillGoals();
 
   template<typename T>
   void getBoundingBox(std::vector<T> vector, double& bbmaxx, double& bbmaxy, double& bbminx, double& bbminy, double radius);
@@ -332,6 +333,8 @@ public:
     SHAPE_HEX,
     SHAPE_CIRC
   } goal_shape_t;
+
+  bool fulfilled;
 
   goal_shape_t shape;
 

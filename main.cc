@@ -571,6 +571,12 @@ int main(int argc, char *argv[])
       writeState = GUITIME;
     }
 
+    if (world->steps % updateRate == 1)
+    {
+      double successRate = world->evaluateSuccess();
+      printf("%f%% of the boxes were in the right position.\n", successRate * 100);
+    }
+
     world->Step(timeStep);
   }
 

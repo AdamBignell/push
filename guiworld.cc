@@ -8,6 +8,7 @@ const double c_darkred[3] = {0.8, 0.0, 0.0};
 const double c_tan[3] = {0.8, 0.6, 0.5};
 const double c_gray[3] = {0.9, 0.9, 1.0};
 const double c_royalblue[3] = {0.20, 0.55, 0.90};
+const double c_barbiepink[3] = {1.0, 0.41, 0.70};
 
 bool World::paused = false;
 bool GuiWorld::step = false;
@@ -232,7 +233,10 @@ void GuiWorld::Step(double timestep)
 			{
 				for (auto &g : row)
 				{
-					DrawBody(g->body, c_royalblue, g->size);
+					if (g->fulfilled)
+						DrawBody(g->body, c_barbiepink, g->size);
+					else
+						DrawBody(g->body, c_royalblue, g->size);
 				}
 			}
 		}

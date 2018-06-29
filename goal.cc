@@ -2,7 +2,7 @@
 
 #include "push.hh"
 
-Goal::Goal(World *world, double x, double y, double size, goal_shape_t shape) : x(x), y(y), size(size), shape(shape), body(NULL)
+Goal::Goal(World *world, double x, double y, double size, goal_shape_t shape) : x(x), y(y), size(size), shape(shape), fulfilled(false), body(NULL)
 {
   b2PolygonShape staticBox;
   b2CircleShape staticCircle;

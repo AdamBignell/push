@@ -704,7 +704,7 @@ bool World::populateGoals(double RADMIN, int callNum, std::vector<Goal*>& tempGo
   }
 
   // We only make it here if we are finalizing
-  
+
   // Matches the goals to the center of contraction
   // Often this is a fractional value
   recenterGoals(tempGoals);
@@ -741,6 +741,8 @@ void World::clearGoals()
 // Let's check how well we did
 double World::evaluateSuccess()
 {
+  unfulfillGoals();
+
   double d = boxes[0]->size; // diameter
   double r = d/2.0; //radius
   double apothem = sqrt(d*d - r*r)/2.0;
@@ -754,10 +756,10 @@ double World::evaluateSuccess()
   for (auto &box : boxes)
   {
     b2Vec2 pos = box->body->GetPosition();
-    xmax = floor(pos.x) + 3;
-    ymax = floor(pos.y) + 3;
-    xmin = floor(pos.x) - 3;
-    ymin = floor(pos.y) - 3;
+    xmax = floor(pos.x) + 1;
+    ymax = floor(pos.y) + 1;
+    xmin = floor(pos.x) - 1;
+    ymin = floor(pos.y) - 1;
     for (int j = ymin; j <= ymax; ++j)
     {
       for (int i = xmin; i <= xmax; ++i)
@@ -765,13 +767,16 @@ double World::evaluateSuccess()
         for (int k = 0; k < goals[i][j].size(); ++k)
         {
           Goal* g = goals[i][j][k];
-          dist = sqrt((g->x - pos.x)*(g->x - pos.x) + (g->y - pos.y)*(g->y - pos.y));
-          if (dist <= apothem)
+          if (!g->fulfilled)
           {
-            // At most one goal will be fulfilled by a box since goalSize = boxSize
-            numCorrect++;
-            goals[i][j].erase(goals[i][j].begin() + k);
-            gotSuccess = true;
+            dist = sqrt((g->x - pos.x)*(g->x - pos.x) + (g->y - pos.y)*(g->y - pos.y));
+            if (dist <= apothem)
+            {
+              // At most one goal will be fulfilled by a box since goalSize = boxSize
+              numCorrect++;
+              g->fulfilled = true;
+              gotSuccess = true;
+            }
           }
           if (gotSuccess)
             break;
@@ -854,5 +859,19 @@ void World::getBoundingBox(std::vector<T> vector, double& bbmaxx, double& bbmaxy
     bbmaxy = height/2.0 + radius;
     bbminx = width/2.0 - radius;
     bbminy = height/2.0 - radius;
+  }
+}
+
+void World::unfulfillGoals()
+{
+  for (auto &col: goals)
+  {
+    for (auto &row : col)
+    {
+      for (auto &g : row)
+      {
+        g->fulfilled = false;
+      }
+    }
   }
 }
