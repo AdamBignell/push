@@ -352,6 +352,7 @@ int main(int argc, char *argv[])
   // display the world states more cleanly
   int updateRate = 100;
   bool running = true;
+  double numCorrect = 0;
 
   // If we have an input file we don't need to calculate states
   // The while here becomes the whole main loop
@@ -365,13 +366,21 @@ int main(int argc, char *argv[])
       if (world->steps % updateRate == 1) // every now and again
       {
         running = world->loadNextState(file);
-        double successRate = world->evaluateSuccess();
-        printf("%f%% of the boxes were in the right position.\n", successRate * 100);
+      }
+      if (world->steps % (updateRate*10) == 1) // We do not need to do this very frequently
+      {
+        numCorrect = 0;
+        for (auto b : world->boxes)
+        {
+          if (b->insidePoly)
+            numCorrect++;
+        }
+        printf("%f%% of the boxes were in the right position.\n", (numCorrect/world->boxes.size()) * 100.00);
       }
       world->Step(timeStep);
       world->paused = true;
     }
-    printf("%f%% of the boxes were in the right position.\n", world->success * 100);
+    //printf("%f%% of the boxes are in the right position.\n", (numCorrect/world->boxes.size()) * 100);
     return 0; // Finished reading the file, close
   }
 
@@ -436,7 +445,20 @@ int main(int argc, char *argv[])
     boxArea = (apothem * (box_size/4.0)) * 6.0;
   }
 
-  uint64_t maxsteps = 10000L;
+  // Also use this to make contraction a little more exact
+  double robotArea;
+  if (robot_type == Robot::SHAPE_RECT)
+    robotArea = robot_size*robot_size;
+  else if (robot_type == Robot::SHAPE_CIRC)
+    robotArea = M_PI*((robot_size/2)*(robot_size/2));
+  else // robot_size = HEX
+  {
+    //double perimeter = 6*(robot_size/2);
+    double apothem = sqrt((robot_size/2)*(robot_size/2) - (robot_size/4)*(robot_size/4));
+    robotArea = (apothem * (robot_size/4.0)) * 6.0;
+  }
+
+  uint64_t maxsteps = 100000L;
 
   // We need to adjust the user polygon to fit the arena
   double radius = RADMAX;
@@ -447,7 +469,7 @@ int main(int argc, char *argv[])
   }
 
   // Get Rad Min alos captures the goal polygon. We have to call populateGoals() after this
-  double RADMIN = world->GetRadMin(BOXES, boxArea, robot_size, world->polygon);
+  double RADMIN = world->GetRadMin(boxArea, robotArea, robot_size, world->polygon);
 
   fprintf(stderr, "Initializing.");
   std::vector<Goal*> tempGoals; //For recursion purposes
@@ -474,24 +496,21 @@ int main(int argc, char *argv[])
   // Can stop the holding behaviour by setting this to false
   // holdFor is set automatically below; it should be 0 here to begin
   bool holdAtMin = true;
-  double holdTime = 5000/updateRate;
-  if (pFileName == "")
-    holdTime = 1000/updateRate; // Circles are way more robuts. Need not waste time.
+  double holdTime = 2500/updateRate;
+  // if (pFileName == "")
+  //   holdTime = 1000/updateRate; // Circles are way more robuts. Need not waste time.
   double holdFor = 0;
 
   /* Loop until the user closes the window */
   // Note that for irregular polygons we define the radius as the shortest distance
   // to any point on the polygon
   int writeState = GUITIME;
-  fprintf(stderr, "\nRunning");
+  fprintf(stderr, "\nRunning...");
   while (!world->RequestShutdown() && world->steps < maxsteps)
   {
     // TODO: Refactor this monster of a loop
     if (world->steps % updateRate == 1) // every now and again
     {
-      // Just for reassurnace
-      if (!useGui && (world->steps % (updateRate*20) == 1))
-        fprintf(stderr, ".");
       // Are we staying contracted?
       if (holdFor != 0 && holdAtMin)
       {
@@ -532,14 +551,14 @@ int main(int argc, char *argv[])
         // This shouldn't be an else despite the above
         if (radius <= RADMAX)
         {
-          if (pFileName != "") // proxy to determine if a polygon was supplied
+          if (world->havePolygon) // proxy to determine if a polygon was supplied
           {
             // These switch between circle and polygon
             // Can opt to use e.g. 0.25 instead of 0.5 to make switching radius tighter
-            if (radius > RADMAX*0.5 && world->havePolygon && sdelta > 1)
-              world->havePolygon = false;
-            else if (radius < RADMAX*0.5 && !world->havePolygon && sdelta < 1)
-              world->havePolygon = true;
+            if (radius > RADMAX*0.5 && world->usePolygon && sdelta > 1)
+              world->usePolygon = false;
+            else if (radius < RADMAX*0.5 && !world->usePolygon && sdelta < 1)
+              world->usePolygon = true;
           }
           // Turns all necessary lights on for a specific amount of contraction (radius)
           // The polygon will automatically be used if it is well defined
@@ -573,20 +592,20 @@ int main(int argc, char *argv[])
       writeState = GUITIME;
     }
 
-    if (world->steps % updateRate == 1)
+    if (world->steps % (updateRate*10) == 1) // We do not need to do this very frequently
     {
-      double successRate = world->evaluateSuccess();
-      printf("%f%% of the boxes were in the right position.\n", successRate * 100);
+      double successRate = world->evaluateSuccessInsidePoly(RADMIN);
+      printf("%f%% of the boxes are in the right position.\n", successRate * 100);
     }
 
     world->Step(timeStep);
   }
 
   printf("\nCompleted %lu steps.\n", world->steps);
-  double successRate = world->evaluateSuccess();
+  double successRate = world->evaluateSuccessInsidePoly(RADMIN);
   if (outputFileName != "")
     world->saveSuccessMeasure(outputFileName);
-  printf("%f%% of the boxes were in the right position.\n", successRate * 100);
+  printf("%f%% of the boxes are in the right position.\n", successRate * 100);
 
   return 0;
 }

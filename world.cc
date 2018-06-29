@@ -10,10 +10,10 @@ World::World(double width, double height, int numLights, int drawInterval) : ste
                                                               height(height),
                                                               numLights(numLights),
                                                               draw_interval(drawInterval),
+                                                              havePolygon(false),
                                                               b2world(new b2World(b2Vec2(0, 0))), // gravity
                                                               lights()                            //empty vector
 {
-  havePolygon = false;
   
   //set interior box container
   b2BodyDef boxWallDef;
@@ -144,7 +144,7 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
     for (int y = 0; y < lside; y++)
     {
       int on = 0;
-      if (havePolygon) // Use the polygon
+      if (usePolygon) // Use the polygon
       {
         on = (fabs(polygon->getDistFromPoint(x, y) < fmax(fmax(lx,ly)/2,PATTWIDTH)));
         if (on && cornerRate != 0)
@@ -284,10 +284,12 @@ void World::Step(double timestep)
 
 // Get the minimum contracted size
 // Use total box area to estimate
-double World::GetRadMin(double numBoxes, double boxArea, double robot_size, Polygon* realPoly)
+double World::GetRadMin(double boxArea, double robotArea, double robot_size, Polygon* realPoly)
 {
-  Polygon tempPoly(*realPoly)
-;  double totalBoxArea = numBoxes * boxArea;
+  Polygon tempPoly(*realPoly);
+  double totalBoxArea = boxes.size() * boxArea;
+  double totalRobotArea = robots.size() * robotArea;
+  double totalArea = totalBoxArea + totalRobotArea;
   double testScale = 0.975;
   if (havePolygon)
   {
@@ -295,7 +297,16 @@ double World::GetRadMin(double numBoxes, double boxArea, double robot_size, Poly
     // Can we do this loop algebraically?
     // Stop one iteration early to account for
     // the bodies of the robots themselves
-    while (area * testScale > totalBoxArea)
+    while ((area * (testScale*testScale)) > totalArea)
+    {
+      tempPoly.scale(testScale);
+      area *= testScale*testScale; // Area grows by the square of the scaling
+    }
+
+    // Contraction is different than goal, since the robots take up space
+    double minRad = tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
+
+    while ((area) * (testScale*testScale) > totalBoxArea)
     {
       tempPoly.scale(testScale);
       area *= testScale*testScale; // Area grows by the square of the scaling
@@ -304,7 +315,8 @@ double World::GetRadMin(double numBoxes, double boxArea, double robot_size, Poly
     goalPolygon->vertices = tempPoly.vertices;
     goalPolygon->cx = tempPoly.cx;
     goalPolygon->cy = tempPoly.cy;
-    return tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
+
+    return minRad;
   }
 
   //Circle case
@@ -316,7 +328,7 @@ double World::GetSetRadMax(Polygon* tempPoly){
   //TODO: This still feels buggy for user-defined polygons
   if (havePolygon)
   {
-    double arenaArea = (width*height)*(0.25);
+    double arenaArea = (width*height)*(0.50);
     double testScale = 1.05;
     double area = tempPoly->getArea();
     // Can we do this loop algebraically?
@@ -408,7 +420,7 @@ void World::appendWorldStateToFile(std::string saveFileName)
     {
         // x, y, a
         pose = box->body->GetPosition();
-        outfile << pose.x << ' ' << pose.y << ' ' << box->body->GetAngle()<< '\n';
+        outfile << pose.x << ' ' << pose.y << ' ' << box->body->GetAngle() << ' ' << box->insidePoly << '\n';
     }
   outfile << "!\n";
   // Write the light information
@@ -452,13 +464,15 @@ void World::updateBoxesFromString(std::string &boxStr)
   std::string box;
   int bDex = 0;
   getline(iss, box, '\n'); // dump the first
-  float x, y, a, charge;
+  float x, y, a;
+  bool insidePoly;
   while (getline(iss, box, '\n'))
   {
     std::istringstream poseStr(box);
-    poseStr >> x >> y >> a;
+    poseStr >> x >> y >> a >> insidePoly;
     b2Vec2 pose(x,y);
     boxes[bDex]->body->SetTransform(pose, a);
+    boxes[bDex]->insidePoly = insidePoly;
     bDex++;
   }
 }
@@ -739,7 +753,7 @@ void World::clearGoals()
 }
 
 // Let's check how well we did
-double World::evaluateSuccess()
+double World::evaluateSuccessNumGoals()
 {
   unfulfillGoals();
 
@@ -798,6 +812,54 @@ double World::evaluateSuccess()
   return numCorrect / numGoals;
 }
 
+// Let's check how well we did
+double World::evaluateSuccessInsidePoly(double MINRAD)
+{
+  double d = boxes[0]->size; // diameter
+  double r = d/2.0; //radius
+  double apothem = sqrt(d*d - r*r)/2.0;
+  double oneBoxArea = (apothem * (r/2.0)) * 6.0;
+  double numCorrect = 0;
+  double dist = 0;
+
+  double ldx = sqrt(numLights)/width/2.0;
+  double ldy = sqrt(numLights)/height/2.0;
+  double trueCx = (width / 2.0) + ldx;
+  double trueCy = (height / 2.0) + ldy;
+
+  bool gotSuccess = false;
+
+  double xmin,xmax,ymin,ymax;
+  for (auto &box : boxes)
+  {
+    b2Vec2 pos = box->body->GetPosition();
+    if (havePolygon)
+    {
+      if (goalPolygon->pointInsidePoly(pos.x,pos.y))
+      {
+        ++numCorrect;
+        box->insidePoly = true;
+      }
+      else
+        box->insidePoly = false;
+    }
+    else
+    {
+      dist = sqrt((trueCx - pos.x)*(trueCx - pos.x) + (trueCy - pos.y)*(trueCy - pos.y));
+      if (dist < MINRAD*0.90)
+      {
+        box->insidePoly = true;
+        ++numCorrect;
+      }
+      else
+        box->insidePoly = false;
+    }
+  }
+  // Capture the success so we can write it out later if need be
+  success = numCorrect / numGoals;
+  return numCorrect / numGoals;
+}
+
 void World::recenterGoals(std::vector<Goal*>& tempGoals)
 {
   double ldx = sqrt(numLights)/width/2.0;
@@ -833,6 +895,9 @@ void World::recenterGoals(std::vector<Goal*>& tempGoals)
     g->y += dy;
     g->body->SetTransform(b2Vec2(g->x, g->y), 0);
   }
+
+  // Also recenter the goalPolygon 
+  goalPolygon->translate(dx, dy, true);
 }
 
 template<typename T>
@@ -862,6 +927,8 @@ void World::getBoundingBox(std::vector<T> vector, double& bbmaxx, double& bbmaxy
   }
 }
 
+// Turn all goals off
+// Used to reset on check
 void World::unfulfillGoals()
 {
   for (auto &col: goals)

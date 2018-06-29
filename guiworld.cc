@@ -244,13 +244,15 @@ void GuiWorld::Step(double timestep)
 		// draw the walls
 		for (int i = 0; i < 4; i++)
 			DrawBody(boxWall[i], c_gray, -1);
-
 		for (int i = 0; i < 4; i++)
 			DrawBody(robotWall[i], c_gray, -1);
 
 		// draw the boxes
 		for (auto &b : boxes)
-			DrawBody(b->body, c_gray, b->size);
+			if (b->insidePoly)
+				DrawBody(b->body, c_barbiepink, b->size);
+			else
+				DrawBody(b->body, c_gray, b->size);
 
 		// Draw the robots
 		for (auto &r : robots)

@@ -4,6 +4,7 @@
 
 Box::Box(World &world, box_shape_t shape, double size, double x, double y, double a)
     : body(NULL),
+      insidePoly(false),
       size(size)
 {
   b2PolygonShape dynamicBox;

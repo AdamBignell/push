@@ -115,7 +115,8 @@ public:
   // This defines the desired shape upon completion
   Polygon *goalPolygon;
 
-  bool havePolygon;
+  bool havePolygon; // This isn't going to change
+  bool usePolygon; // This alters depending on contraction
 
   // Just for convenience
   // Doesn't make sense to pause a non-gui world
@@ -169,7 +170,7 @@ public:
 
   // Get the minimum contracted size
   // Use total box area to estimate
-  double GetRadMin(double numBoxes, double boxArea, double robot_size, Polygon* tempPoly);
+  double GetRadMin(double boxArea, double robotArea, double robot_size, Polygon* tempPoly);
 
   // Approximately Match arena Size,
   // and actually set the polgyon to this size
@@ -199,9 +200,15 @@ public:
   // Just factor out the double loop
   void clearGoals();
 
-  // Check how well we did, and return the success
+  // Both the following functios check how well we did
   // as a double where 0 <= return value <= 1
-  double evaluateSuccess();
+
+  // Count fulfilled goals
+  // I find this doesn't match intuition well
+  double evaluateSuccessNumGoals();
+
+  // Count how many boxes are in the min radius
+  double evaluateSuccessInsidePoly(double RADMIN);
 };
 
 class GuiWorld : public World
@@ -306,6 +313,7 @@ class Box
 public:
   double size;
   char cshape;
+  bool insidePoly;
 
   typedef enum
   {
