@@ -328,7 +328,7 @@ double World::GetSetRadMax(Polygon* tempPoly){
   //TODO: This still feels buggy for user-defined polygons
   if (havePolygon)
   {
-    double arenaArea = (width*height)*(0.50);
+    double arenaArea = (width*height) * (0.50);
     double testScale = 1.05;
     double area = tempPoly->getArea();
     // Can we do this loop algebraically?
@@ -603,6 +603,7 @@ bool World::loadPolygonFromFile(std::ifstream& infile)
   {
     // Used throughout to detect if we are in the circle or poly case
     havePolygon = true;
+    usePolygon = true;
     return true;
   }
 }

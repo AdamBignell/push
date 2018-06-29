@@ -402,9 +402,6 @@ int main(int argc, char *argv[])
   // These lines prime the polygon
   if (world->havePolygon)
   {
-    // Adjust the polygon to account for corners
-    // world->polygon.primeCorners();
-
     // Make the centroid the origin
     Vertex centroid = world->polygon->getCentroid();
     world->polygon->translate(-1*centroid.x, -1*centroid.y, false);
@@ -496,9 +493,9 @@ int main(int argc, char *argv[])
   // Can stop the holding behaviour by setting this to false
   // holdFor is set automatically below; it should be 0 here to begin
   bool holdAtMin = true;
-  double holdTime = 2500/updateRate;
-  // if (pFileName == "")
-  //   holdTime = 1000/updateRate; // Circles are way more robuts. Need not waste time.
+  double holdTime = 5000/updateRate;
+  if (pFileName == "")
+     holdTime = 2500/updateRate; // Circles are way more robuts. Need not waste time.
   double holdFor = 0;
 
   /* Loop until the user closes the window */
@@ -556,7 +553,10 @@ int main(int argc, char *argv[])
             // These switch between circle and polygon
             // Can opt to use e.g. 0.25 instead of 0.5 to make switching radius tighter
             if (radius > RADMAX*0.5 && world->usePolygon && sdelta > 1)
+            {
               world->usePolygon = false;
+              //radius = world->polygon->getAvgDistFromPoint(goalx, goaly);
+            }
             else if (radius < RADMAX*0.5 && !world->usePolygon && sdelta < 1)
               world->usePolygon = true;
           }
