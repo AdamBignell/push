@@ -365,6 +365,8 @@ int main(int argc, char *argv[])
       if (world->steps % updateRate == 1) // every now and again
       {
         running = world->loadNextState(file);
+        double successRate = world->evaluateSuccess();
+        printf("%f%% of the boxes were in the right position.\n", successRate * 100);
       }
       world->Step(timeStep);
       world->paused = true;
