@@ -189,14 +189,13 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
       // (fabs( c2 - r2 ) < lside) ); Old version: Why is this lside?
     }
   
-  // TODO: Fix gradual off idea
   // This lexicographically sorts the tuples by distance
   if (cornerRate != 0)
   {
     std::sort(lightsOn.begin(), lightsOn.end());
     double lightsTurnedOff = 0;
     int i = 0;
-    while (lightsTurnedOff / lightsOn.size() < cornerRate/2.0 || lightsTurnedOff / lightsOn.size() == 1.0)
+    while (lightsTurnedOff / lightsOn.size() < cornerRate/4.0 || lightsTurnedOff / lightsOn.size() == 1.0)
     {
       SetLightIntensity(std::get<1>(lightsOn[lightsTurnedOff]), 0);
       lightsTurnedOff += 1.0;
@@ -857,8 +856,8 @@ double World::evaluateSuccessInsidePoly(double MINRAD)
     }
   }
   // Capture the success so we can write it out later if need be
-  success = numCorrect / numGoals;
-  return numCorrect / numGoals;
+  success = numCorrect / boxes.size();
+  return success;
 }
 
 void World::recenterGoals(std::vector<Goal*>& tempGoals)
@@ -896,6 +895,19 @@ void World::recenterGoals(std::vector<Goal*>& tempGoals)
     g->y += dy;
     g->body->SetTransform(b2Vec2(g->x, g->y), 0);
   }
+}
+
+void World::centerGoalPolygonAgainstLights()
+{
+  double ldx = sqrt(numLights)/width/2.0;
+  double ldy = sqrt(numLights)/height/2.0;
+  double trueCx = (width / 2.0) + ldx;
+  double trueCy = (height / 2.0) + ldy;
+
+  // Adjust to match the center of contraction for the lights
+  Vertex center = goalPolygon->getCentroid();
+  double dx = trueCx - center.x;
+  double dy = trueCy - center.y;
 
   // Also recenter the goalPolygon 
   goalPolygon->translate(dx, dy, true);

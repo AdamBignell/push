@@ -470,8 +470,12 @@ int main(int argc, char *argv[])
 
   fprintf(stderr, "Initializing.");
   std::vector<Goal*> tempGoals; //For recursion purposes
-  world->populateGoals(RADMIN, 0, tempGoals);
+  //world->populateGoals(RADMIN, 0, tempGoals);
   printf("\nNumber of goals: %i\n", (int)world->numGoals);
+
+  // This gets the goal polygon center dead on with
+  // the center of convergence; important for measuring success
+  world->centerGoalPolygonAgainstLights();
 
   // Must do this after populating goals
   if (outputFileName != "")
@@ -590,12 +594,11 @@ int main(int argc, char *argv[])
     {
       world->appendWorldStateToFile(outputFileName);
       writeState = GUITIME;
-    }
-
-    if (world->steps % (updateRate*10) == 1) // We do not need to do this very frequently
-    {
-      double successRate = world->evaluateSuccessInsidePoly(RADMIN);
-      printf("%f%% of the boxes are in the right position.\n", successRate * 100);
+      if (world->steps % (updateRate*10) == 1) // We do not need to do this very frequently
+      {
+        double successRate = world->evaluateSuccessInsidePoly(RADMIN);
+        printf("%f%% of the boxes are in the right position.\n", successRate * 100);
+      }
     }
 
     world->Step(timeStep);

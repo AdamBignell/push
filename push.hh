@@ -194,6 +194,8 @@ public:
   void recenterGoals(std::vector<Goal*>& tempGoals);
   void unfulfillGoals();
 
+  void centerGoalPolygonAgainstLights();
+
   template<typename T>
   void getBoundingBox(std::vector<T> vector, double& bbmaxx, double& bbmaxy, double& bbminx, double& bbminy, double radius);
 
