@@ -137,6 +137,7 @@ int main(int argc, char *argv[])
   // and the output file of the execution
   std::string pFileName = "";
   std::string outputFileName = "";
+  std::string successFileName = "";
   std::string inputFileName = "";
 
   /* options descriptor */
@@ -252,7 +253,8 @@ int main(int argc, char *argv[])
       GUITIME = atoi(optArgProxy);
       break;
     case 'o':
-      outputFileName = optArgProxy;
+      outputFileName = std::string(optArgProxy) + ".txt";
+      successFileName = std::string(optArgProxy) + "PerformanceData.txt";
       break;
     case 'i':
     { // necessary since we initialize
@@ -375,7 +377,7 @@ int main(int argc, char *argv[])
           if (b->insidePoly)
             numCorrect++;
         }
-        printf("%f%% of the boxes were in the right position.\n", (numCorrect/world->boxes.size()) * 100.00);
+        printf("%f%% boxes correct.\n", (numCorrect/world->boxes.size()) * 100.00);
       }
       world->Step(timeStep);
       world->paused = true;
@@ -475,7 +477,8 @@ int main(int argc, char *argv[])
 
   // This gets the goal polygon center dead on with
   // the center of convergence; important for measuring success
-  world->centerGoalPolygonAgainstLights();
+  if (world->havePolygon)
+    world->centerGoalPolygonAgainstLights();
 
   // Must do this after populating goals
   if (outputFileName != "")
@@ -594,11 +597,12 @@ int main(int argc, char *argv[])
     {
       world->appendWorldStateToFile(outputFileName);
       writeState = GUITIME;
-      if (world->steps % (updateRate*10) == 1) // We do not need to do this very frequently
-      {
-        double successRate = world->evaluateSuccessInsidePoly(RADMIN);
-        printf("%f%% of the boxes are in the right position.\n", successRate * 100);
-      }
+    }
+
+    if (world->steps % (updateRate*10) == 1) // We do not need to do this very frequently
+    {
+      double successRate = world->evaluateSuccessInsidePoly(RADMIN);
+      printf("%ld steps: %f%% boxes correct.\n", world->steps, successRate * 100);
     }
 
     world->Step(timeStep);

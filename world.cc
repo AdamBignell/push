@@ -287,34 +287,54 @@ double World::GetRadMin(double boxArea, double robotArea, double robot_size, Pol
 {
   Polygon tempPoly(*realPoly);
   double totalBoxArea = boxes.size() * boxArea;
-  double totalRobotArea = robots.size() * robotArea;
-  double totalArea = totalBoxArea + totalRobotArea;
+  double totalRobotArea = robots.size() * robotArea; // 0.75 makes the robots put pressure on the boxes
+  double desiredArea = totalBoxArea + totalRobotArea;
   double testScale = 0.975;
+  // if (havePolygon)
+  // {
+  //   double area = tempPoly.getArea();
+  //   // Can we do this loop algebraically?
+  //   // Stop one iteration early to account for
+  //   // the bodies of the robots themselves
+  //   while ((area * (testScale*testScale)) > totalArea)
+  //   {
+  //     tempPoly.scale(testScale);
+  //     area *= testScale*testScale; // Area grows by the square of the scaling
+  //   }
+
+  //   // Contraction is different than goal, since the robots take up space
+  //   double minRad = tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
+
+  //   while ((area) * (testScale*testScale) > totalBoxArea)
+  //   {
+  //     tempPoly.scale(testScale);
+  //     area *= testScale*testScale; // Area grows by the square of the scaling
+  //   }
+
+  //   goalPolygon->vertices = tempPoly.vertices;
+  //   goalPolygon->cx = tempPoly.cx;
+  //   goalPolygon->cy = tempPoly.cy;
+
+  //   return minRad;
+  // }
+
   if (havePolygon)
   {
-    double area = tempPoly.getArea();
-    // Can we do this loop algebraically?
-    // Stop one iteration early to account for
-    // the bodies of the robots themselves
-    while ((area * (testScale*testScale)) > totalArea)
-    {
-      tempPoly.scale(testScale);
-      area *= testScale*testScale; // Area grows by the square of the scaling
-    }
+    double currRad = tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
+    double currArea = tempPoly.getArea();
+    double ratioArea = desiredArea / currArea;
+    double oneDRatio = sqrt(ratioArea);
 
-    // Contraction is different than goal, since the robots take up space
-    double minRad = tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
-
-    while ((area) * (testScale*testScale) > totalBoxArea)
-    {
-      tempPoly.scale(testScale);
-      area *= testScale*testScale; // Area grows by the square of the scaling
-    }
-
+    // NOTE THAT THE MIN RADIUS != THE RADIUS OF THE POLYGON
+    // We stop contracting to account for robot area
+    // but any box that is in this robot-band does not count as a hit
+    tempPoly.scale(sqrt(totalBoxArea/currArea));
     goalPolygon->vertices = tempPoly.vertices;
     goalPolygon->cx = tempPoly.cx;
     goalPolygon->cy = tempPoly.cy;
 
+    double minRad = currRad * oneDRatio;
+    double correctRad = tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
     return minRad;
   }
 
@@ -846,7 +866,7 @@ double World::evaluateSuccessInsidePoly(double MINRAD)
     else
     {
       dist = sqrt((trueCx - pos.x)*(trueCx - pos.x) + (trueCy - pos.y)*(trueCy - pos.y));
-      if (dist < MINRAD*0.90)
+      if (dist < MINRAD)
       {
         box->insidePoly = true;
         ++numCorrect;
