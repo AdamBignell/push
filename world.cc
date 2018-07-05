@@ -385,7 +385,7 @@ void World::savePerformanceFileHeader(std::string saveFileName, std::string user
   outfile << "SwitchToCircle: " << switchToCircle << "\n";
   outfile << "TargetShape: ";
   if (goalPolygon->vertices.size() == 0)
-    outfile << "Circle\n";
+    outfile << "Circle";
   else
   {
     for (int i = 0; i < goalPolygon->vertices.size(); ++i)
