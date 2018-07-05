@@ -384,8 +384,18 @@ void World::savePerformanceFileHeader(std::string saveFileName, std::string user
     outfile << "Drag: NONE\n";
   outfile << "SwitchToCircle: " << switchToCircle << "\n";
   outfile << "TargetShape: ";
-  for (auto& v : goalPolygon->vertices)
-    outfile << v.x << " " << v.y << ", ";
+  if (goalPolygon->vertices.size() == 0)
+    outfile << "Circle\n";
+  else
+  {
+    for (int i = 0; i < goalPolygon->vertices.size(); ++i)
+    {
+      Vertex v = goalPolygon->vertices[i];
+      outfile << v.x << " " << v.y;
+      if (i != goalPolygon->vertices.size() -1)
+        outfile << ", ";
+    }
+  }
   outfile << "\n$\n";
 }
 
