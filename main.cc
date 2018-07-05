@@ -128,6 +128,8 @@ int main(int argc, char *argv[])
   double robot_size = 0.35;
   double box_size = 0.25;
   double flare = -1.0;
+  double drag = 0;
+  bool switchToCircle = false;
   Pusher::robot_shape_t robot_type = Pusher::SHAPE_RECT;
   Box::box_shape_t box_type = Box::SHAPE_RECT;
   int GUITIME = 1;
@@ -137,7 +139,7 @@ int main(int argc, char *argv[])
   // and the output file of the execution
   std::string pFileName = "";
   std::string outputFileName = "";
-  std::string successFileName = "";
+  std::string performanceFileName = "";
   std::string inputFileName = "";
 
   /* options descriptor */
@@ -152,6 +154,8 @@ int main(int argc, char *argv[])
       {"outputfile", required_argument, NULL, 'o'},
       {"inputfile", required_argument, NULL, 'i'},
       {"flare", required_argument, NULL, 'f'},
+      {"drag", required_argument, NULL, 'd'},
+      {"circleswitch", required_argument, NULL, 'c'},
       //  { "help",  optional_argument,   NULL,  'h' },
       {NULL, 0, NULL, 0}};
 
@@ -184,7 +188,7 @@ int main(int argc, char *argv[])
     }
   }
   // Parse all other options
-  while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y:p:g:o:i:f:", longopts, &optindex)) != -1 || optindex < tokens.size())
+  while ((ch = getopt_long(argc, argv, "w:h:r:b:z:s:t:y:p:g:o:i:f:d:c:", longopts, &optindex)) != -1 || optindex < tokens.size())
   {
     if (argv)
       strcpy(optArgProxy, optarg);
@@ -253,8 +257,8 @@ int main(int argc, char *argv[])
       GUITIME = atoi(optArgProxy);
       break;
     case 'o':
-      outputFileName = std::string(optArgProxy) + ".txt";
-      successFileName = std::string(optArgProxy) + "PerformanceData.txt";
+      outputFileName = "Results_Replays/" + std::string(optArgProxy) + ".txt";
+      performanceFileName = "Results/" + std::string(optArgProxy) + "_PerfData.txt";
       break;
     case 'i':
     { // necessary since we initialize
@@ -283,6 +287,18 @@ int main(int argc, char *argv[])
       flare = atof(optArgProxy);
       break;
     }
+    case 'd':
+    {
+      drag = atof(optArgProxy);
+      break;
+    }
+    case 'c':
+    {
+      double stoC = atof(optArgProxy);
+      if (stoC > 0)
+        switchToCircle = true;
+      break;
+    }
     default:
       printf("unhandled option %c\n", ch);
       //puts( USAGE );
@@ -302,6 +318,9 @@ int main(int argc, char *argv[])
   {
     world = new World(WIDTH, HEIGHT, LIGHTS, GUITIME);
   }
+
+  world->flare = flare;
+  world->drag = drag;
 
   // Create objects
   // Zoomed In
@@ -485,6 +504,7 @@ int main(int argc, char *argv[])
   {
     world->saveWorldHeader(outputFileName);
     world->saveGoalsToFile(outputFileName);
+    world->savePerformanceFileHeader(performanceFileName, outputFileName);
   }
 
   // These lines prime the polygon
@@ -500,7 +520,7 @@ int main(int argc, char *argv[])
   // Can stop the holding behaviour by setting this to false
   // holdFor is set automatically below; it should be 0 here to begin
   bool holdAtMin = true;
-  double holdTime = 5000/updateRate;
+  double holdTime = 2500/updateRate;
   if (pFileName == "")
      holdTime = 2500/updateRate; // Circles are way more robuts. Need not waste time.
   double holdFor = 0;
@@ -555,7 +575,7 @@ int main(int argc, char *argv[])
         // This shouldn't be an else despite the above
         if (radius <= RADMAX)
         {
-          if (world->havePolygon) // proxy to determine if a polygon was supplied
+          if (world->havePolygon && switchToCircle) // proxy to determine if a polygon was supplied
           {
             // These switch between circle and polygon
             // Can opt to use e.g. 0.25 instead of 0.5 to make switching radius tighter
@@ -601,7 +621,7 @@ int main(int argc, char *argv[])
 
     if (world->steps % (updateRate*10) == 1) // We do not need to do this very frequently
     {
-      double successRate = world->evaluateSuccessInsidePoly(RADMIN);
+      double successRate = world->evaluateSuccessInsidePoly(RADMIN, performanceFileName);
       printf("%ld steps: %f%% boxes correct.\n", world->steps, successRate * 100);
     }
 
@@ -609,7 +629,7 @@ int main(int argc, char *argv[])
   }
 
   printf("\nCompleted %lu steps.\n", world->steps);
-  double successRate = world->evaluateSuccessInsidePoly(RADMIN);
+  double successRate = world->evaluateSuccessInsidePoly(RADMIN, performanceFileName);
   if (outputFileName != "")
     world->saveSuccessMeasure(outputFileName);
   printf("%f%% of the boxes are in the right position.\n", successRate * 100);

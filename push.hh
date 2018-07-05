@@ -106,6 +106,8 @@ public:
   int numLights;
   int draw_interval;
   double success;
+  double flare;
+  double drag;
 
   b2Body *boxWall[4];
   b2Body *robotWall[4];
@@ -180,6 +182,7 @@ public:
   void saveWorldHeader(std::string saveFileName);
   void saveGoalsToFile(std::string saveFileName);
   void saveSuccessMeasure(std::string saveFileName);
+  void savePerformanceFileHeader(std::string saveFileName, std::string userFileName);
   void appendWorldStateToFile(std::string saveFileName);
 
   void updateRobotsFromString(std::string &robotStr);
@@ -210,7 +213,7 @@ public:
   double evaluateSuccessNumGoals();
 
   // Count how many boxes are in the min radius
-  double evaluateSuccessInsidePoly(double RADMIN);
+  double evaluateSuccessInsidePoly(double RADMIN, std::string perfFile);
 };
 
 class GuiWorld : public World

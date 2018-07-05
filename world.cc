@@ -10,6 +10,8 @@ World::World(double width, double height, int numLights, int drawInterval) : ste
                                                               height(height),
                                                               numLights(numLights),
                                                               draw_interval(drawInterval),
+                                                              flare(-1),
+                                                              drag(0),
                                                               havePolygon(false),
                                                               b2world(new b2World(b2Vec2(0, 0))), // gravity
                                                               lights()                            //empty vector
@@ -147,7 +149,7 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
       if (usePolygon) // Use the polygon
       {
         on = (fabs(polygon->getDistFromPoint(x, y) < fmax(fmax(lx,ly)/2,PATTWIDTH)));
-        if (on && cornerRate != 0)
+        if (on && drag != 0)
         {
           double minDist = width*height;
           for (auto vertex: polygon->vertices)
@@ -190,12 +192,12 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
     }
   
   // This lexicographically sorts the tuples by distance
-  if (cornerRate != 0)
+  if (drag != 0)
   {
     std::sort(lightsOn.begin(), lightsOn.end());
     double lightsTurnedOff = 0;
     int i = 0;
-    while (lightsTurnedOff / lightsOn.size() < cornerRate/4.0 || lightsTurnedOff / lightsOn.size() == 1.0)
+    while (lightsTurnedOff / lightsOn.size() < cornerRate*drag || lightsTurnedOff / lightsOn.size() == 1.0)
     {
       SetLightIntensity(std::get<1>(lightsOn[lightsTurnedOff]), 0);
       lightsTurnedOff += 1.0;
@@ -374,8 +376,35 @@ void World::saveWorldHeader(std::string saveFileName)
   outfile << " -r " << robots.size() << " -b " << boxes.size();
   outfile << " -z " << robots[0]->size << " -s " << boxes[0]->size;
   outfile << " -t " << robots[0]->cshape << " -y " << boxes[0]->cshape;
+  outfile << " -f " << flare;
   outfile << " -g " << "1" << '\n';
   outfile << "$\n";
+}
+
+void World::savePerformanceFileHeader(std::string saveFileName, std::string userFileName)
+{
+  std::ofstream outfile;
+  outfile.open(saveFileName);
+
+  outfile << saveFileName << "\n";
+  outfile << "HEADER:\n";
+  outfile << "Replay: " << userFileName << "\n";
+  outfile << "Width: " << width << "\n";
+  outfile << "Height: " << height << "\n";
+  outfile << "#Robots: " << robots.size() << "\n";
+  outfile << "#Boxes: " << boxes.size() << "\n";
+  outfile << "RobotSize: " << robots[0]->size << "\n";
+  outfile << "BoxSize: " << boxes[0]->size << "\n";
+  outfile << "RobotShape: " << robots[0]->cshape << "\n";
+  outfile << "BoxShape: " << boxes[0]->cshape << "\n";
+  if (flare > 0)
+    outfile << "Flare: " << flare << "\n";
+  else
+    outfile << "Flare: NONE\n";
+  outfile << "TargetShape: ";
+  for (auto& v : goalPolygon->vertices)
+    outfile << v.x << " " << v.y << ", ";
+  outfile << "\n$\n";
 }
 
 void World::saveSuccessMeasure(std::string saveFileName)
@@ -833,8 +862,16 @@ double World::evaluateSuccessNumGoals()
 }
 
 // Let's check how well we did
-double World::evaluateSuccessInsidePoly(double MINRAD)
+double World::evaluateSuccessInsidePoly(double MINRAD, std::string perfFile)
 {
+  std::ofstream outfile;
+  if (perfFile != "")
+  {
+    outfile.open(perfFile, std::ios_base::app);
+    outfile << "!\n";
+    outfile << "Step#: " << steps << "\n!" << "\n";
+  }
+
   double d = boxes[0]->size; // diameter
   double r = d/2.0; //radius
   double apothem = sqrt(d*d - r*r)/2.0;
@@ -850,6 +887,7 @@ double World::evaluateSuccessInsidePoly(double MINRAD)
   bool gotSuccess = false;
 
   double xmin,xmax,ymin,ymax;
+  double totalDist;
   for (auto &box : boxes)
   {
     b2Vec2 pos = box->body->GetPosition();
@@ -859,9 +897,19 @@ double World::evaluateSuccessInsidePoly(double MINRAD)
       {
         ++numCorrect;
         box->insidePoly = true;
+        if (perfFile != "")
+          outfile << 0 << "\n";
       }
       else
+      {
         box->insidePoly = false;
+        if (perfFile != "")
+        {
+          double dist = goalPolygon->getDistFromPoint(pos.x, pos.y);
+          totalDist += dist;
+          outfile << dist << "\n";
+        }
+      }
     }
     else
     {
@@ -870,13 +918,33 @@ double World::evaluateSuccessInsidePoly(double MINRAD)
       {
         box->insidePoly = true;
         ++numCorrect;
+        if (perfFile != "")
+          outfile << 0 << "\n";
       }
       else
+      {
         box->insidePoly = false;
+        if (perfFile != "")
+        {
+          totalDist += dist;
+          outfile << dist << "\n";
+        }
+      }
     }
   }
   // Capture the success so we can write it out later if need be
   success = numCorrect / boxes.size();
+
+  if (perfFile != "")
+  {
+    outfile << "!\n";
+    outfile << "TotalInsideGoal: " << numCorrect << "/" << boxes.size() << "\n";
+    outfile << "Percentage: " << success << "\n";
+    outfile << "TotalAverageDistance: " << totalDist / boxes.size() << "\n";
+    outfile << "OutsideAverageDistance: " << totalDist / (boxes.size() - numCorrect) << "\n";
+    outfile << "!\n";
+    outfile << "$\n";
+  }
   return success;
 }
 
