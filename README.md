@@ -31,18 +31,19 @@ Otherwise, you may specify the following options:
 | -y | Box shape | R = Rectangular, C = Circular, H = Hexagonal |
 | -p | Path to polygon file | String |
 | -g | How often to render the arena | Integer|
-| -o | Output file name, saves a replay | String|
-| -i | Input file name, loads a replay | String|
+| -o | Output file name, saves a replay | String, no .txt needed|
+| -i | Input file name, loads a replay | String, specify exact name|
 | -x | Run without GUI | No Argument |
 | -f | Set flare of corners | Positive Float |
+| -d | Set drag speed | 0 <= Float <= 1 |
 
 A typical run command:
 
-```./push -r 60 -b 200 -s 0.6 -z 0.7 -t C -y H -p shapes/square.txt```
+```./push -r 60 -b 200 -s 0.6 -z 0.7 -t C -y H -f 1.75 -d 0.25 -p shapes/square.txt```
 
-A typical output command:
+A typical run command with output:
 
-```./push -r 60 -b 200 -s 0.6 -z 0.7 -t C -y H -g 50 -o myReplay.txt```
+```./push -r 60 -b 200 -s 0.6 -z 0.7 -t C -y H -g 50 -o myReplay```
 
 A typical load command:
 
