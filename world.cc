@@ -5,13 +5,14 @@
 #include <string>
 #include <stdlib.h>
 
-World::World(double width, double height, int numLights, int drawInterval) : steps(0),
+World::World(double width, double height, int numLights, int drawInterval, double flare, double drag, bool switchToCircle) : steps(0),
                                                               width(width),
                                                               height(height),
                                                               numLights(numLights),
                                                               draw_interval(drawInterval),
-                                                              flare(-1),
-                                                              drag(0),
+                                                              flare(flare),
+                                                              drag(drag),
+                                                              switchToCircle(switchToCircle),
                                                               havePolygon(false),
                                                               b2world(new b2World(b2Vec2(0, 0))), // gravity
                                                               lights()                            //empty vector
@@ -292,33 +293,6 @@ double World::GetRadMin(double boxArea, double robotArea, double robot_size, Pol
   double totalRobotArea = robots.size() * robotArea; // 0.75 makes the robots put pressure on the boxes
   double desiredArea = totalBoxArea + totalRobotArea;
   double testScale = 0.975;
-  // if (havePolygon)
-  // {
-  //   double area = tempPoly.getArea();
-  //   // Can we do this loop algebraically?
-  //   // Stop one iteration early to account for
-  //   // the bodies of the robots themselves
-  //   while ((area * (testScale*testScale)) > totalArea)
-  //   {
-  //     tempPoly.scale(testScale);
-  //     area *= testScale*testScale; // Area grows by the square of the scaling
-  //   }
-
-  //   // Contraction is different than goal, since the robots take up space
-  //   double minRad = tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
-
-  //   while ((area) * (testScale*testScale) > totalBoxArea)
-  //   {
-  //     tempPoly.scale(testScale);
-  //     area *= testScale*testScale; // Area grows by the square of the scaling
-  //   }
-
-  //   goalPolygon->vertices = tempPoly.vertices;
-  //   goalPolygon->cx = tempPoly.cx;
-  //   goalPolygon->cy = tempPoly.cy;
-
-  //   return minRad;
-  // }
 
   if (havePolygon)
   {
@@ -337,6 +311,9 @@ double World::GetRadMin(double boxArea, double robotArea, double robot_size, Pol
 
     double minRad = currRad * oneDRatio;
     double correctRad = tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
+
+    fprintf(stderr, "Total Box Area = %f, Goal Polygon Area = %f\n", totalBoxArea, goalPolygon->getArea());
+
     return minRad;
   }
 
@@ -401,6 +378,11 @@ void World::savePerformanceFileHeader(std::string saveFileName, std::string user
     outfile << "Flare: " << flare << "\n";
   else
     outfile << "Flare: NONE\n";
+  if (drag > 0)
+    outfile << "Drag: " << drag << "\n";
+  else
+    outfile << "Drag: NONE\n";
+  outfile << "SwitchToCircle: " << switchToCircle << "\n";
   outfile << "TargetShape: ";
   for (auto& v : goalPolygon->vertices)
     outfile << v.x << " " << v.y << ", ";

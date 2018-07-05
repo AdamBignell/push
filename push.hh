@@ -108,6 +108,7 @@ public:
   double success;
   double flare;
   double drag;
+  bool switchToCircle;
 
   b2Body *boxWall[4];
   b2Body *robotWall[4];
@@ -134,7 +135,7 @@ public:
 
   double numGoals; // Necessary since we can't just call goals.size()
 
-  World(double width, double height, int numLights, int drawInterval);
+  World(double width, double height, int numLights, int drawInterval, double flare, double drag, bool switchToCircle);
 
   virtual void AddRobot(Robot *robot);
   virtual void AddBox(Box *box);
@@ -228,7 +229,7 @@ public:
 
   GLFWwindow *window;
 
-  GuiWorld(double width, double height, int numLights, int draw_interval);
+  GuiWorld(double width, double height, int numLights, int draw_interval, double flare, double drag, bool switchToCircle);
   ~GuiWorld();
 
   virtual void Step(double timestep);

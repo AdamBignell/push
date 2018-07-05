@@ -312,15 +312,12 @@ int main(int argc, char *argv[])
   World* world = NULL;
   if (useGui)
   {
-    world = new GuiWorld(WIDTH, HEIGHT, LIGHTS, GUITIME);
+    world = new GuiWorld(WIDTH, HEIGHT, LIGHTS, GUITIME, flare, drag, switchToCircle);
   }
   else
   {
-    world = new World(WIDTH, HEIGHT, LIGHTS, GUITIME);
+    world = new World(WIDTH, HEIGHT, LIGHTS, GUITIME, flare, drag, switchToCircle);
   }
-
-  world->flare = flare;
-  world->drag = drag;
 
   // Create objects
   // Zoomed In

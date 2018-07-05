@@ -154,7 +154,8 @@ void DrawDisk(double cx, double cy, double r, const double color[3])
 	glEnd();
 }
 
-GuiWorld::GuiWorld(double width, double height, int numLights, int drawinterval) : World(width, height, numLights, draw_interval),
+GuiWorld::GuiWorld(double width, double height, int numLights, int drawinterval, double flare, double drag, bool switchToCircle) : 
+																	World(width, height, numLights, draw_interval, flare, drag, switchToCircle),
 																	window(NULL),
 																	lights_need_redraw(true)
 {
