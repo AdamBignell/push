@@ -477,9 +477,6 @@ int main(int argc, char *argv[])
 
   uint64_t maxsteps = 100000L;
 
-  // Get Rad Min alos captures the goal polygon. We have to call populateGoals() after this
-  double RADMIN = world->GetRadMin(boxArea, robotArea, robot_size, world->polygon);
-
   fprintf(stderr, "Initializing.");
   std::vector<Goal*> tempGoals; //For recursion purposes
   //world->populateGoals(RADMIN, 0, tempGoals);
@@ -488,6 +485,7 @@ int main(int argc, char *argv[])
   // This gets the goal polygon center dead on with
   // the center of convergence; important for measuring success
   if (world->havePolygon)
+    world->populateGoalPolygon(boxArea, robotArea, robot_size, world->polygon);
     world->centerGoalPolygonAgainstLights();
 
   // Must do this after populating goals
@@ -507,6 +505,9 @@ int main(int argc, char *argv[])
     world->polygon->primeCorners(flare);
     world->polygon->translate(goalx, goaly, true);
   }
+
+  // Get Rad Min alos captures the goal polygon. We have to call populateGoals() after this
+  double RADMIN = world->GetRadMin(boxArea, robotArea, robot_size, world->polygon);
 
   // We need to adjust the user polygon to fit the arena
   double radius = RADMAX;

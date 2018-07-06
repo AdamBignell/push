@@ -198,6 +198,7 @@ public:
   void recenterGoals(std::vector<Goal*>& tempGoals);
   void unfulfillGoals();
 
+  void populateGoalPolygon(double boxArea, double robotArea, double robot_size, Polygon* realPoly);
   void centerGoalPolygonAgainstLights();
 
   template<typename T>

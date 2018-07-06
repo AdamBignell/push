@@ -300,15 +300,6 @@ double World::GetRadMin(double boxArea, double robotArea, double robot_size, Pol
     double currArea = tempPoly.getArea();
     double ratioArea = desiredArea / currArea;
     double oneDRatio = sqrt(ratioArea);
-
-    // NOTE THAT THE MIN RADIUS != THE RADIUS OF THE POLYGON
-    // We stop contracting to account for robot area
-    // but any box that is in this robot-band does not count as a hit
-    tempPoly.scale(sqrt(totalBoxArea/currArea));
-    goalPolygon->vertices = tempPoly.vertices;
-    goalPolygon->cx = tempPoly.cx;
-    goalPolygon->cy = tempPoly.cy;
-
     double minRad = currRad * oneDRatio;
     double correctRad = tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
 
@@ -802,6 +793,8 @@ void World::clearGoals()
 // Let's check how well we did
 double World::evaluateSuccessNumGoals()
 {
+  // This function is obsolete now
+  // The goal approach is extremely costlt
   unfulfillGoals();
 
   double d = boxes[0]->size; // diameter
@@ -886,6 +879,7 @@ double World::evaluateSuccessInsidePoly(double MINRAD, std::string perfFile)
 
   double xmin,xmax,ymin,ymax;
   double totalDist;
+  // Check if the box is inside the goal polygon
   for (auto &box : boxes)
   {
     b2Vec2 pos = box->body->GetPosition();
@@ -895,12 +889,15 @@ double World::evaluateSuccessInsidePoly(double MINRAD, std::string perfFile)
       {
         ++numCorrect;
         box->insidePoly = true;
+        // We record the success to a file if we are
+        // told to output by the user
         if (perfFile != "")
           outfile << 0 << "\n";
       }
       else
       {
         box->insidePoly = false;
+        // See above
         if (perfFile != "")
         {
           double dist = goalPolygon->getDistFromPoint(pos.x, pos.y);
@@ -909,7 +906,7 @@ double World::evaluateSuccessInsidePoly(double MINRAD, std::string perfFile)
         }
       }
     }
-    else
+    else // Circle case
     {
       dist = sqrt((trueCx - pos.x)*(trueCx - pos.x) + (trueCy - pos.y)*(trueCy - pos.y));
       if (dist < MINRAD)
@@ -933,6 +930,7 @@ double World::evaluateSuccessInsidePoly(double MINRAD, std::string perfFile)
   // Capture the success so we can write it out later if need be
   success = numCorrect / boxes.size();
 
+  // Write the success at this point in time
   if (perfFile != "")
   {
     outfile << "!\n";
@@ -940,8 +938,8 @@ double World::evaluateSuccessInsidePoly(double MINRAD, std::string perfFile)
     outfile << "Percentage: " << success << "\n";
     outfile << "TotalAverageDistance: " << totalDist / boxes.size() << "\n";
     outfile << "OutsideAverageDistance: " << totalDist / (boxes.size() - numCorrect) << "\n";
-    outfile << "!\n";
-    outfile << "$\n";
+    outfile << "!\n"; // End section
+    outfile << "$\n"; // End step
   }
   return success;
 }
@@ -950,6 +948,11 @@ void World::recenterGoals(std::vector<Goal*>& tempGoals)
 {
   double ldx = sqrt(numLights)/width/2.0;
   double ldy = sqrt(numLights)/height/2.0;
+
+  // The lights are discretized and centered in each tile.
+  // Consider that in a 3x3 grid, the center point
+  // is not the bottom right corner of the middle tile
+  // as (width/2, height/2) would imply
   double trueCx = (width / 2.0) + ldx;
   double trueCy = (height / 2.0) + ldy;
 
@@ -980,6 +983,30 @@ void World::recenterGoals(std::vector<Goal*>& tempGoals)
     g->x += dx;
     g->y += dy;
     g->body->SetTransform(b2Vec2(g->x, g->y), 0);
+  }
+}
+
+void World::populateGoalPolygon(double boxArea, double robotArea, double robot_size, Polygon* realPoly)
+{
+  Polygon tempPoly(*realPoly);
+  double totalBoxArea = boxes.size() * boxArea;
+  double totalRobotArea = robots.size() * robotArea; // 0.75 makes the robots put pressure on the boxes
+  double desiredArea = totalBoxArea + totalRobotArea;
+
+  if (havePolygon)
+  {
+    double currRad = tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
+    double currArea = tempPoly.getArea();
+    double ratioArea = desiredArea / currArea;
+    double oneDRatio = sqrt(ratioArea);
+
+    // NOTE THAT THE MIN RADIUS != THE RADIUS OF THE POLYGON
+    // We stop contracting to account for robot area
+    // but any box that is in this robot-band does not count as a hit
+    tempPoly.scale(sqrt(totalBoxArea/currArea));
+    goalPolygon->vertices = tempPoly.vertices;
+    goalPolygon->cx = tempPoly.cx;
+    goalPolygon->cy = tempPoly.cy;
   }
 }
 
