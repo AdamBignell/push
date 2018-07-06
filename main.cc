@@ -371,6 +371,7 @@ int main(int argc, char *argv[])
   int updateRate = 100;
   bool running = true;
   double numCorrect = 0;
+  int checkSuccess = 10;
 
   // If we have an input file we don't need to calculate states
   // The while here becomes the whole main loop
@@ -384,9 +385,11 @@ int main(int argc, char *argv[])
       if (world->steps % updateRate == 1) // every now and again
       {
         running = world->loadNextState(file);
+        checkSuccess--;
       }
-      if (world->steps % (updateRate*10) == 1) // We do not need to do this very frequently
+      if (checkSuccess == 0) // We do not need to do this very frequently
       {
+        checkSuccess = 100;
         numCorrect = 0;
         for (auto b : world->boxes)
         {
@@ -398,7 +401,6 @@ int main(int argc, char *argv[])
       world->Step(timeStep);
       world->paused = true;
     }
-    //printf("%f%% of the boxes are in the right position.\n", (numCorrect/world->boxes.size()) * 100);
     return 0; // Finished reading the file, close
   }
 
@@ -475,14 +477,6 @@ int main(int argc, char *argv[])
 
   uint64_t maxsteps = 100000L;
 
-  // We need to adjust the user polygon to fit the arena
-  double radius = RADMAX;
-  if (world->havePolygon)
-  {
-    RADMAX = world->GetSetRadMax(world->polygon);
-    radius = world->polygon->getDistFromPoint(goalx, goaly);
-  }
-
   // Get Rad Min alos captures the goal polygon. We have to call populateGoals() after this
   double RADMIN = world->GetRadMin(boxArea, robotArea, robot_size, world->polygon);
 
@@ -501,7 +495,7 @@ int main(int argc, char *argv[])
   {
     world->saveWorldHeader(outputFileName);
     world->saveGoalsToFile(outputFileName);
-    world->savePerformanceFileHeader(performanceFileName, outputFileName);
+    world->savePerformanceFileHeader(performanceFileName, outputFileName, maxsteps);
   }
 
   // These lines prime the polygon
@@ -512,6 +506,14 @@ int main(int argc, char *argv[])
     world->polygon->translate(-goalx, -goaly, true);
     world->polygon->primeCorners(flare);
     world->polygon->translate(goalx, goaly, true);
+  }
+
+  // We need to adjust the user polygon to fit the arena
+  double radius = RADMAX;
+  if (world->havePolygon)
+  {
+    RADMAX = world->GetSetRadMax(world->polygon);
+    radius = world->polygon->getDistFromPoint(goalx, goaly);
   }
 
   // Can stop the holding behaviour by setting this to false

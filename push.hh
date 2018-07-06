@@ -183,7 +183,7 @@ public:
   void saveWorldHeader(std::string saveFileName);
   void saveGoalsToFile(std::string saveFileName);
   void saveSuccessMeasure(std::string saveFileName);
-  void savePerformanceFileHeader(std::string saveFileName, std::string userFileName);
+  void savePerformanceFileHeader(std::string saveFileName, std::string userFileName, uint64_t maxSteps);
   void appendWorldStateToFile(std::string saveFileName);
 
   void updateRobotsFromString(std::string &robotStr);

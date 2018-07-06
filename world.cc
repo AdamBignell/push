@@ -17,7 +17,7 @@ World::World(double width, double height, int numLights, int drawInterval, doubl
                                                               b2world(new b2World(b2Vec2(0, 0))), // gravity
                                                               lights()                            //empty vector
 {
-  
+  srand48(time(NULL));
   //set interior box container
   b2BodyDef boxWallDef;
   b2PolygonShape groundBox;
@@ -323,17 +323,21 @@ double World::GetRadMin(double boxArea, double robotArea, double robot_size, Pol
 }
 
 double World::GetSetRadMax(Polygon* tempPoly){
-  //TODO: This still feels buggy for user-defined polygons
   if (havePolygon)
   {
     double arenaArea = (width*height) * (0.50);
     double testScale = 1.05;
     double area = tempPoly->getArea();
     // Can we do this loop algebraically?
-    while (area < arenaArea) // Want to be sufficiently wide
+    double maxx = -1 * std::numeric_limits<double>::infinity();
+    double maxy = -1 * std::numeric_limits<double>::infinity();
+    double minx = std::numeric_limits<double>::infinity();
+    double miny = std::numeric_limits<double>::infinity();
+    while (area < arenaArea && maxx < width && minx > 0 && maxy < height && miny > 0) // Want to be sufficiently wide
     {
       tempPoly->scale(testScale);
       area *= testScale*testScale;
+      getBoundingBox(tempPoly->vertices, maxx, maxy, minx, miny, 0);
     }
     return tempPoly->getDistFromPoint(tempPoly->cx,tempPoly->cy);
   }
@@ -358,7 +362,7 @@ void World::saveWorldHeader(std::string saveFileName)
   outfile << "$\n";
 }
 
-void World::savePerformanceFileHeader(std::string saveFileName, std::string userFileName)
+void World::savePerformanceFileHeader(std::string saveFileName, std::string userFileName, uint64_t maxSteps)
 {
   std::ofstream outfile;
   outfile.open(saveFileName);
@@ -385,7 +389,7 @@ void World::savePerformanceFileHeader(std::string saveFileName, std::string user
   outfile << "SwitchToCircle: " << switchToCircle << "\n";
   outfile << "TargetShape: ";
   if (goalPolygon->vertices.size() == 0)
-    outfile << "Circle";
+    outfile << "Circle" << "\n";
   else
   {
     for (int i = 0; i < goalPolygon->vertices.size(); ++i)
@@ -395,7 +399,9 @@ void World::savePerformanceFileHeader(std::string saveFileName, std::string user
       if (i != goalPolygon->vertices.size() -1)
         outfile << ", ";
     }
+    outfile << "\n";
   }
+  outfile << "Maxsteps: " << maxSteps;
   outfile << "\n$\n";
 }
 
