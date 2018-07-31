@@ -376,40 +376,6 @@ int main(int argc, char *argv[])
   double numCorrect = 0;
   int checkSuccess = 10;
 
-  // If we have an input file we don't need to calculate states
-  // The while here becomes the whole main loop
-  if (inputFileName != "")
-  {
-    // It doesn't make sense to skip frames here
-    world->draw_interval = 1;
-    std::ifstream file(inputFileName);
-    while (!world->RequestShutdown() && running)
-    {
-      if (!world->replay_paused)
-      {
-        if (world->steps % updateRate == 1) // every now and again
-        {
-          running = world->loadNextState(file);
-          checkSuccess--;
-        }
-        if (checkSuccess == 0) // We do not need to do this very frequently
-        {
-          checkSuccess = 100;
-          numCorrect = 0;
-          for (auto b : world->boxes)
-          {
-            if (b->insidePoly)
-              numCorrect++;
-          }
-          printf("%f%% boxes correct.\n", (numCorrect/world->boxes.size()) * 100.00);
-        }
-      }
-      world->Step(timeStep);
-      world->paused = true;
-    }
-    return 0; // Finished reading the file, close
-  }
-
   // Read the polygon from the input file if we have one
   if (pFileName != "")
   {
@@ -539,6 +505,40 @@ int main(int argc, char *argv[])
   double GoalRadCircle = sqrt((world->boxes.size()*boxArea)/M_PI);
   if (!world->havePolygon)
     world->minimumRad = GoalRadCircle;
+
+  // If we have an input file we don't need to calculate states
+  // The while here becomes the whole main loop
+  if (inputFileName != "")
+  {
+    // It doesn't make sense to skip frames here
+    world->draw_interval = 1;
+    std::ifstream file(inputFileName);
+    while (!world->RequestShutdown() && running)
+    {
+      if (!world->replay_paused)
+      {
+        if (world->steps % updateRate == 1) // every now and again
+        {
+          running = world->loadNextState(file);
+          checkSuccess--;
+        }
+        if (checkSuccess == 0) // We do not need to do this very frequently
+        {
+          checkSuccess = 100;
+          numCorrect = 0;
+          for (auto b : world->boxes)
+          {
+            if (b->insidePoly)
+              numCorrect++;
+          }
+          printf("%f%% boxes correct.\n", (numCorrect/world->boxes.size()) * 100.00);
+        }
+      }
+      world->Step(timeStep);
+      world->paused = true;
+    }
+    return 0; // Finished reading the file, close
+  }
 
   /* Loop until the user closes the window */
   // Note that for irregular polygons we define the radius as the shortest distance
