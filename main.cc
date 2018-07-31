@@ -310,13 +310,16 @@ int main(int argc, char *argv[])
   LIGHTS = WIDTH * HEIGHT;
 
   World* world = NULL;
+  double replayWorld = false;
+  if (inputFileName != "")
+    replayWorld = true;
   if (useGui)
   {
-    world = new GuiWorld(WIDTH, HEIGHT, LIGHTS, GUITIME, flare, drag, switchToCircle);
+    world = new GuiWorld(WIDTH, HEIGHT, LIGHTS, GUITIME, flare, drag, switchToCircle, replayWorld);
   }
   else
   {
-    world = new World(WIDTH, HEIGHT, LIGHTS, GUITIME, flare, drag, switchToCircle);
+    world = new World(WIDTH, HEIGHT, LIGHTS, GUITIME, flare, drag, switchToCircle, replayWorld);
   }
 
   // Create objects
@@ -349,17 +352,17 @@ int main(int argc, char *argv[])
     // }
 
     //Zoomed Out
-    double lhBoxBound = WIDTH * 3/8.0;
-    double rhBoxBound= WIDTH - lhBoxBound;
-    double bottomBoxBound = HEIGHT * 3/8.0;
-    double topBoxBound = HEIGHT - bottomBoxBound;
-    while ((x > lhBoxBound && x < rhBoxBound && y > bottomBoxBound && y < topBoxBound))
+    double lhBoxBound = (WIDTH * 3/8.0);
+    double rhBoxBound= (WIDTH - lhBoxBound);
+    double bottomBoxBound = (HEIGHT * 3/8.0);
+    double topBoxBound = (HEIGHT - bottomBoxBound);
+    while ((x >= lhBoxBound && x <= rhBoxBound && y >= bottomBoxBound && y <= topBoxBound))
     {
       x = drand48() * (WIDTH * 4/8.0) + (WIDTH * 2/8.0);
       y = drand48() * (HEIGHT * 4/8.0) + (HEIGHT * 2/8.0);
     }
 
-    world->AddRobot(new Pusher(*world, robot_type, robot_size, x, y, drand48() * M_PI));
+    world->AddRobot(new Pusher(*world, robot_type, robot_size, x + ldx, y + ldy, drand48() * M_PI));
   }
 
   // fill the world with a grid of lights, all off
@@ -382,21 +385,24 @@ int main(int argc, char *argv[])
     std::ifstream file(inputFileName);
     while (!world->RequestShutdown() && running)
     {
-      if (world->steps % updateRate == 1) // every now and again
+      if (!world->replay_paused)
       {
-        running = world->loadNextState(file);
-        checkSuccess--;
-      }
-      if (checkSuccess == 0) // We do not need to do this very frequently
-      {
-        checkSuccess = 100;
-        numCorrect = 0;
-        for (auto b : world->boxes)
+        if (world->steps % updateRate == 1) // every now and again
         {
-          if (b->insidePoly)
-            numCorrect++;
+          running = world->loadNextState(file);
+          checkSuccess--;
         }
-        printf("%f%% boxes correct.\n", (numCorrect/world->boxes.size()) * 100.00);
+        if (checkSuccess == 0) // We do not need to do this very frequently
+        {
+          checkSuccess = 100;
+          numCorrect = 0;
+          for (auto b : world->boxes)
+          {
+            if (b->insidePoly)
+              numCorrect++;
+          }
+          printf("%f%% boxes correct.\n", (numCorrect/world->boxes.size()) * 100.00);
+        }
       }
       world->Step(timeStep);
       world->paused = true;
@@ -475,7 +481,7 @@ int main(int argc, char *argv[])
     robotArea = (apothem * (robot_size/4.0)) * 6.0;
   }
 
-  uint64_t maxsteps = 100000L;
+  uint64_t maxsteps = 1000000L;
 
   fprintf(stderr, "Initializing.");
   std::vector<Goal*> tempGoals; //For recursion purposes
@@ -485,8 +491,10 @@ int main(int argc, char *argv[])
   // This gets the goal polygon center dead on with
   // the center of convergence; important for measuring success
   if (world->havePolygon)
+  {
     world->populateGoalPolygon(boxArea, robotArea, robot_size, world->polygon);
     world->centerGoalPolygonAgainstLights();
+  }
 
   // Must do this after populating goals
   if (outputFileName != "")
@@ -499,6 +507,7 @@ int main(int argc, char *argv[])
   // These lines prime the polygon
   if (world->havePolygon && flare > 0)
   {
+    world->polygon->markConcavePoints();
     // Adjust the polygon to account for corners
     // Note that we need to be centered around the origin
     world->polygon->translate(-goalx, -goaly, true);
@@ -506,7 +515,6 @@ int main(int argc, char *argv[])
     world->polygon->translate(goalx, goaly, true);
   }
 
-  // Get Rad Min alos captures the goal polygon. We have to call populateGoals() after this
   double RADMIN = world->GetRadMin(boxArea, robotArea, robot_size, world->polygon);
 
   // We need to adjust the user polygon to fit the arena
@@ -517,6 +525,8 @@ int main(int argc, char *argv[])
     radius = world->polygon->getDistFromPoint(goalx, goaly);
   }
 
+  double CIRCLERADMAX = (WIDTH / 2.0) * 0.75;
+
   // Can stop the holding behaviour by setting this to false
   // holdFor is set automatically below; it should be 0 here to begin
   bool holdAtMin = true;
@@ -524,6 +534,11 @@ int main(int argc, char *argv[])
   if (pFileName == "")
      holdTime = 2500/updateRate; // Circles are way more robuts. Need not waste time.
   double holdFor = 0;
+
+
+  double GoalRadCircle = sqrt((world->boxes.size()*boxArea)/M_PI);
+  if (!world->havePolygon)
+    world->minimumRad = GoalRadCircle;
 
   /* Loop until the user closes the window */
   // Note that for irregular polygons we define the radius as the shortest distance
@@ -568,24 +583,27 @@ int main(int argc, char *argv[])
           continue;
         }
 
-        else if (radius > RADMAX)
+        else if (((radius > RADMAX) && world->usePolygon) || (radius > CIRCLERADMAX && !world->usePolygon))
           sdelta = 2-sdelta; // Switch to contraction
           //delta = -delta; //downdelta;
 
         // This shouldn't be an else despite the above
-        if (radius <= RADMAX)
+        if (((radius <= RADMAX) && world->usePolygon) || (radius <= CIRCLERADMAX && !world->usePolygon))
         {
           if (world->havePolygon && switchToCircle) // proxy to determine if a polygon was supplied
           {
             // These switch between circle and polygon
             // Can opt to use e.g. 0.25 instead of 0.5 to make switching radius tighter
-            if (radius > RADMAX*0.5 && world->usePolygon && sdelta > 1)
+            if (radius > WIDTH/8.0 && world->usePolygon && sdelta > 1)
             {
               world->usePolygon = false;
-              //radius = world->polygon->getAvgDistFromPoint(goalx, goaly);
+              radius = world->polygon->getDistFromPoint(world->polygon->cx, world->polygon->cy);
             }
-            else if (radius < RADMAX*0.5 && !world->usePolygon && sdelta < 1)
+            else if (radius < WIDTH/8.0 && !world->usePolygon && sdelta < 1)
+            {
               world->usePolygon = true;
+              radius = world->polygon->getDistFromPoint(world->polygon->cx, world->polygon->cy);
+            }
           }
           // Turns all necessary lights on for a specific amount of contraction (radius)
           // The polygon will automatically be used if it is well defined
@@ -602,7 +620,7 @@ int main(int argc, char *argv[])
         // This handles both contractions and dilation
         if (holdFor == 0) // If we aren't staying contracted
         {
-          if (world->havePolygon)
+          if (world->havePolygon && world->usePolygon)
             world->polygon->scale(sdelta);
           radius *= sdelta;
         }
@@ -621,7 +639,7 @@ int main(int argc, char *argv[])
 
     if (world->steps % (updateRate*10) == 1) // We do not need to do this very frequently
     {
-      double successRate = world->evaluateSuccessInsidePoly(RADMIN, performanceFileName);
+      double successRate = world->evaluateSuccessInsidePoly(GoalRadCircle, performanceFileName);
       printf("%ld steps: %f%% boxes correct.\n", world->steps, successRate * 100);
     }
 
@@ -629,7 +647,7 @@ int main(int argc, char *argv[])
   }
 
   printf("\nCompleted %lu steps.\n", world->steps);
-  double successRate = world->evaluateSuccessInsidePoly(RADMIN, performanceFileName);
+  double successRate = world->evaluateSuccessInsidePoly(GoalRadCircle, performanceFileName);
   if (outputFileName != "")
     world->saveSuccessMeasure(outputFileName);
   printf("%f%% of the boxes are in the right position.\n", successRate * 100);

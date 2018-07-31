@@ -5,7 +5,7 @@
 #include <string>
 #include <stdlib.h>
 
-World::World(double width, double height, int numLights, int drawInterval, double flare, double drag, bool switchToCircle) : steps(0),
+World::World(double width, double height, int numLights, int drawInterval, double flare, double drag, bool switchToCircle, bool replayWorld) : steps(0),
                                                               width(width),
                                                               height(height),
                                                               numLights(numLights),
@@ -17,6 +17,8 @@ World::World(double width, double height, int numLights, int drawInterval, doubl
                                                               b2world(new b2World(b2Vec2(0, 0))), // gravity
                                                               lights()                            //empty vector
 {
+  replayWorld = replayWorld;
+  replay_paused = false;
   srand48(time(NULL));
   //set interior box container
   b2BodyDef boxWallDef;
@@ -155,7 +157,8 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
           double minDist = width*height;
           for (auto vertex: polygon->vertices)
           {
-            if (vertex.userVert)
+            //if (vertex.userVert)
+            if (!vertex.concave)
             {
               // Use squared distance since we only care about order
               dist = ((x - vertex.x) * (x - vertex.x)) + ((y - vertex.y) * (y - vertex.y));
@@ -291,26 +294,25 @@ double World::GetRadMin(double boxArea, double robotArea, double robot_size, Pol
   Polygon tempPoly(*realPoly);
   double totalBoxArea = boxes.size() * boxArea;
   double totalRobotArea = robots.size() * robotArea; // 0.75 makes the robots put pressure on the boxes
-  double desiredArea = totalBoxArea + totalRobotArea;
+  double desiredArea = totalBoxArea;
   double testScale = 0.975;
 
   if (havePolygon)
   {
     double currRad = tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
     double currArea = tempPoly.getArea();
+
     double ratioArea = desiredArea / currArea;
     double oneDRatio = sqrt(ratioArea);
-    double minRad = currRad * oneDRatio;
-    double correctRad = tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
-
-    fprintf(stderr, "Total Box Area = %f, Goal Polygon Area = %f\n", totalBoxArea, goalPolygon->getArea());
-
+    double minRad = (currRad * oneDRatio) + robot_size;
     return minRad;
   }
 
   //Circle case
-  double radMin = sqrt(totalBoxArea / M_PI) + robot_size; // Need literal wiggle room
-  return radMin;
+  // For the circle we want it to be tight
+  // Any results generated after July 11 use tight_rad for circle
+  double minRad = sqrt(totalBoxArea / M_PI) + robot_size;
+  return minRad;
 }
 
 double World::GetSetRadMax(Polygon* tempPoly){
@@ -868,6 +870,7 @@ double World::evaluateSuccessInsidePoly(double MINRAD, std::string perfFile)
   double apothem = sqrt(d*d - r*r)/2.0;
   double oneBoxArea = (apothem * (r/2.0)) * 6.0;
   double numCorrect = 0;
+  double numIncorrect = 0;
   double dist = 0;
 
   double ldx = sqrt(numLights)/width/2.0;
@@ -878,7 +881,8 @@ double World::evaluateSuccessInsidePoly(double MINRAD, std::string perfFile)
   bool gotSuccess = false;
 
   double xmin,xmax,ymin,ymax;
-  double totalDist;
+  double totalDist = 0;
+  double outsideDist = 0;
   // Check if the box is inside the goal polygon
   for (auto &box : boxes)
   {
@@ -897,19 +901,21 @@ double World::evaluateSuccessInsidePoly(double MINRAD, std::string perfFile)
       else
       {
         box->insidePoly = false;
+        ++numIncorrect;
         // See above
         if (perfFile != "")
         {
           double dist = goalPolygon->getDistFromPoint(pos.x, pos.y);
           totalDist += dist;
+          outsideDist += dist;
           outfile << dist << "\n";
         }
       }
     }
     else // Circle case
     {
-      dist = sqrt((trueCx - pos.x)*(trueCx - pos.x) + (trueCy - pos.y)*(trueCy - pos.y));
-      if (dist < MINRAD)
+      dist = sqrt((trueCx - pos.x)*(trueCx - pos.x) + (trueCy - pos.y)*(trueCy - pos.y)) - MINRAD;
+      if (dist <= 0)
       {
         box->insidePoly = true;
         ++numCorrect;
@@ -919,9 +925,11 @@ double World::evaluateSuccessInsidePoly(double MINRAD, std::string perfFile)
       else
       {
         box->insidePoly = false;
+        ++numIncorrect;
         if (perfFile != "")
         {
           totalDist += dist;
+          outsideDist += dist;
           outfile << dist << "\n";
         }
       }
@@ -937,7 +945,7 @@ double World::evaluateSuccessInsidePoly(double MINRAD, std::string perfFile)
     outfile << "TotalInsideGoal: " << numCorrect << "/" << boxes.size() << "\n";
     outfile << "Percentage: " << success << "\n";
     outfile << "TotalAverageDistance: " << totalDist / boxes.size() << "\n";
-    outfile << "OutsideAverageDistance: " << totalDist / (boxes.size() - numCorrect) << "\n";
+    outfile << "OutsideAverageDistance: " << outsideDist / numIncorrect << "\n";
     outfile << "!\n"; // End section
     outfile << "$\n"; // End step
   }
@@ -991,14 +999,11 @@ void World::populateGoalPolygon(double boxArea, double robotArea, double robot_s
   Polygon tempPoly(*realPoly);
   double totalBoxArea = boxes.size() * boxArea;
   double totalRobotArea = robots.size() * robotArea; // 0.75 makes the robots put pressure on the boxes
-  double desiredArea = totalBoxArea + totalRobotArea;
 
   if (havePolygon)
   {
     double currRad = tempPoly.getDistFromPoint(tempPoly.cx,tempPoly.cy);
     double currArea = tempPoly.getArea();
-    double ratioArea = desiredArea / currArea;
-    double oneDRatio = sqrt(ratioArea);
 
     // NOTE THAT THE MIN RADIUS != THE RADIUS OF THE POLYGON
     // We stop contracting to account for robot area

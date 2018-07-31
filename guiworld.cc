@@ -11,10 +11,12 @@ const double c_royalblue[3] = {0.20, 0.55, 0.90};
 const double c_barbiepink[3] = {1.0, 0.41, 0.70};
 
 bool World::paused = false;
+bool World::replay_paused = false;
+bool World::replayWorld = false;
 bool GuiWorld::step = false;
 int GuiWorld::skip = 10;
 
-void DrawDisk(double cx, double cy, double r, const double color[3]);
+void DrawDisk(double cx, double cy, double r, const double color[3], bool fill);
 
 double RTOD(double rad)
 {
@@ -35,7 +37,14 @@ void key_callback(GLFWwindow *window,
 		switch (key)
 		{
 		case GLFW_KEY_SPACE:
-			GuiWorld::paused = !GuiWorld::paused;
+			if (!GuiWorld::replayWorld)
+			{
+				GuiWorld::paused = !GuiWorld::paused;
+			}
+			else
+			{
+				GuiWorld::replay_paused = !GuiWorld::replay_paused;
+			}
 			break;
 
 		case GLFW_KEY_S:
@@ -72,7 +81,7 @@ void DrawBody(b2Body *b, const double color[3], double size)
 
 			b2Vec2 pos = b->GetPosition();
 			// The size was hardcoded all along
-			DrawDisk(pos.x, pos.y, size / 2.0, color);
+			DrawDisk(pos.x, pos.y, size / 2.0, color, true);
 		}
 		break;
 		case b2Shape::e_polygon:
@@ -92,7 +101,7 @@ void DrawBody(b2Body *b, const double color[3], double size)
 			}
 			glEnd();
 
-			glLineWidth(2.0);
+			glLineWidth(1.0);
 			glColor3f(color[0] / 5, color[1] / 5, color[2] / 5);
 			//glColor3dv( color );
 			//glColor3f( 0,0,0 );
@@ -114,7 +123,7 @@ void DrawBody(b2Body *b, const double color[3], double size)
 	}
 }
 
-void DrawDisk(double cx, double cy, double r, const double color[3])
+void DrawDisk(double cx, double cy, double r, const double color[3], bool fill)
 {
 	const int num_segments = 32.0 * sqrtf(r);
 
@@ -129,16 +138,25 @@ void DrawDisk(double cx, double cy, double r, const double color[3])
 	{
 		glColor3dv(color);
 	}
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	if (fill)
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
+	else
+	{
+		glLineWidth(2.0);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	}
 	glBegin(GL_TRIANGLE_STRIP);
 	for (int ii = 0; ii < num_segments; ii++)
 	{
-		if (color != NULL)
+		if (color != NULL && fill)
 			glColor3f(color[0] / 5, color[1] / 5, color[2] / 5);
 		glVertex2f(x + cx, y + cy);
 		if (color != NULL)
 			glColor3dv(color);
-		glVertex2f(cx, cy);
+		if (fill)
+			glVertex2f(cx, cy);
 
 		//apply the rotation matrix
 		t = x;
@@ -146,7 +164,7 @@ void DrawDisk(double cx, double cy, double r, const double color[3])
 		y = s * t + c * y;
 	}
 
-	glBegin(GL_POLYGON);
+	//glBegin(GL_POLYGON);
 	if (color != NULL)
 		glColor3f(color[0] / 5, color[1] / 5, color[2] / 5);
 	glVertex2f(r + cx, 0 + cy); // first point again to close disk
@@ -154,11 +172,12 @@ void DrawDisk(double cx, double cy, double r, const double color[3])
 	glEnd();
 }
 
-GuiWorld::GuiWorld(double width, double height, int numLights, int drawinterval, double flare, double drag, bool switchToCircle) : 
-																	World(width, height, numLights, draw_interval, flare, drag, switchToCircle),
+GuiWorld::GuiWorld(double width, double height, int numLights, int drawinterval, double flare, double drag, bool switchToCircle, bool replayworld) : 
+																	World(width, height, numLights, draw_interval, flare, drag, switchToCircle, replayworld),
 																	window(NULL),
 																	lights_need_redraw(true)
 {
+	replayWorld = replayworld;
 	srand48(time(NULL));
 	skip = drawinterval;
 
@@ -333,7 +352,7 @@ void GuiWorld::Step(double timestep)
 		for (const auto &l : lights)
 		{
 			glColor4f(1, 1, 0, l->intensity);
-			DrawDisk(l->x, l->y, 0.05, NULL);
+			DrawDisk(l->x, l->y, 0.05, NULL, true);
 		}
 
 		for (int y = 0; y < side; y++)
@@ -348,6 +367,29 @@ void GuiWorld::Step(double timestep)
 				glRectf(wx - dx / 2.0, wy - dy / 2.0,
 						wx + dx / 2.0, wy + dy / 2.0);
 			}
+
+		if (havePolygon)
+		{
+			// Draw the outline of the goal shape
+			glLineWidth(2.0);
+			glBegin(GL_LINES);
+			glColor3f(c_barbiepink[0], c_barbiepink[1], c_barbiepink[2]);
+			int i = 0;
+			for (; i < goalPolygon->vertices.size() - 1; ++i)
+			{
+				glVertex2f(goalPolygon->vertices[i].x, goalPolygon->vertices[i].y);
+				glVertex2f(goalPolygon->vertices[i+1].x, goalPolygon->vertices[i+1].y);
+			}
+			glVertex2f(goalPolygon->vertices[i].x, goalPolygon->vertices[i].y);
+			glVertex2f(goalPolygon->vertices[0].x, goalPolygon->vertices[0].y);
+			glEnd();
+		}
+		else
+		{
+			double ldx = (width / sqrt(numLights)) /2.0;
+			double ldy = (height / sqrt(numLights)) /2.0;
+			DrawDisk(width/2.0 + ldx, height/2.0 + ldy, minimumRad, c_barbiepink, false);
+		}
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);

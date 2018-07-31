@@ -264,20 +264,53 @@ void Polygon::primeCorners(double flare)
     }
 }
 
-  // Uses ray-casting algorithm
-  bool Polygon::pointInsidePoly(double x, double y)
-  {
-    int crossCount = 0;
-    for (int i=0; i<vertices.size(); i++) {
-        // if (the ray crosses a line segment of the poly)
-        if (((vertices[i].y <= y) && (vertices[(i+1) % vertices.size()].y > y))     // +ve slope, point crosses
-            || ((vertices[i].y > y) && (vertices[(i+1) % vertices.size()].y <=  y))) {  // -ve slope, point crosses
-            // Find x coordinate of intersection
-            float xcross = (float)(y  - vertices[i].y) / (vertices[(i+1) % vertices.size()].y - vertices[i].y);
+// Uses ray-casting algorithm
+bool Polygon::pointInsidePoly(double x, double y)
+{
+int crossCount = 0;
+for (int i=0; i<vertices.size(); i++) {
+    // if (the ray crosses a line segment of the poly)
+    if (((vertices[i].y <= y) && (vertices[(i+1) % vertices.size()].y > y))     // +ve slope, point crosses
+        || ((vertices[i].y > y) && (vertices[(i+1) % vertices.size()].y <=  y))) {  // -ve slope, point crosses
+        // Find x coordinate of intersection
+        float xcross = (float)(y  - vertices[i].y) / (vertices[(i+1) % vertices.size()].y - vertices[i].y);
 
-            if (x <  vertices[i].x + xcross * (vertices[(i+1) % vertices.size()].x - vertices[i].x)) // if the point to the left of the intersect
-                 crossCount = !crossCount;   // The ray really does cross
-        }
+        if (x <  vertices[i].x + xcross * (vertices[(i+1) % vertices.size()].x - vertices[i].x)) // if the point to the left of the intersect
+                crossCount = !crossCount;   // The ray really does cross
     }
-    return crossCount;
-  }
+}
+return crossCount;
+}
+
+// Marks the vertices as concave so we drag towards them 
+void Polygon::markConcavePoints()
+{
+    Vertex ab(0,0), cb(0,0);
+    int next, prev;
+    double dot, cross, alpha, angle, scale;
+    for (int i = 0; i < vertices.size(); ++i)
+    {
+        // Calculate angle
+        // Points A, B, C => i-1, i, i+1
+        next = (i+1) % vertices.size();
+        // Not sure why but negative integers for mod give odd behaviour
+        prev = (vertices.size()-1 + i) % vertices.size();
+
+        ab.x = vertices[i].x - vertices[prev].x;
+        ab.y = vertices[i].y - vertices[prev].y;
+
+        cb.x = vertices[i].x - vertices[next].x;
+        cb.y = vertices[i].y - vertices[next].y;
+
+        dot = (ab.x * cb.x + ab.y * cb.y); // dot product
+        cross = (ab.x * cb.y - ab.y * cb.x); // cross product
+
+        alpha = atan2(cross, dot);
+        angle = floor(alpha * 180. / M_PI + 0.5);
+        
+        if (angle <= 0)
+            vertices[i].concave = true;
+        else
+            vertices[i].concave = false;
+    }
+}

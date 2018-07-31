@@ -34,9 +34,11 @@ class Vertex
 public:
   double x, y;
   bool userVert; // Is the vertex user-supplied or added as part of our control strategy?
+  bool concave;
 
   Vertex(double x, double y, bool userVert) : x(x), y(y), userVert(userVert)
   {
+    concave = false;
   }
 
   Vertex(double x, double y) : x(x), y(y)
@@ -86,6 +88,9 @@ public:
   // This attempts to fix the 'rounded square' effect
   void primeCorners(double flare);
 
+  // Marks the vertices as concave so we drag towards them 
+  void markConcavePoints();
+
   // Uses ray-casting algorithm
   bool pointInsidePoly(double x, double y);
 };
@@ -110,6 +115,9 @@ public:
   double drag;
   bool switchToCircle;
 
+  // Used to draw the goal
+  double minimumRad;
+
   b2Body *boxWall[4];
   b2Body *robotWall[4];
 
@@ -124,6 +132,11 @@ public:
   // Just for convenience
   // Doesn't make sense to pause a non-gui world
   static bool paused;
+  static bool replayWorld;
+
+  // Unfortunately necessary. A replay needs to stay 'normal-paused' throughout to avoid updates
+  // replay_pause let's us actually stop loading replay states
+  static bool replay_paused;
 
   size_t steps;
   std::vector<Light *> lights;
@@ -135,7 +148,7 @@ public:
 
   double numGoals; // Necessary since we can't just call goals.size()
 
-  World(double width, double height, int numLights, int drawInterval, double flare, double drag, bool switchToCircle);
+  World(double width, double height, int numLights, int drawInterval, double flare, double drag, bool switchToCircle, bool replayWorld);
 
   virtual void AddRobot(Robot *robot);
   virtual void AddBox(Box *box);
@@ -230,7 +243,7 @@ public:
 
   GLFWwindow *window;
 
-  GuiWorld(double width, double height, int numLights, int draw_interval, double flare, double drag, bool switchToCircle);
+  GuiWorld(double width, double height, int numLights, int draw_interval, double flare, double drag, bool switchToCircle, bool replayWorld);
   ~GuiWorld();
 
   virtual void Step(double timestep);
