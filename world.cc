@@ -574,6 +574,40 @@ void World::updateSuccessFromString(std::string &succStr)
   }
 }
 
+void World::loadGoalPolygon(std::string &inputFile)
+{
+  std::string lineStr;
+  std::string item;
+  inputFile.erase(inputFile.end()-4, inputFile.end());
+  std::string resultsFileName = "Results" + inputFile.erase(0,15) + "_PerfData.txt";
+  std::ifstream file(resultsFileName);
+
+  while (getline(file, lineStr))
+  {
+    std::stringstream ss(lineStr);
+    getline(ss, item, ' ');
+    if (item != "TargetShape:")
+      continue;
+    lineStr.erase(0, 13);
+    lineStr.erase(std::remove(lineStr.begin(), lineStr.end(), ','), lineStr.end());
+
+    if (lineStr == "Circle")
+      return;
+
+    havePolygon = true;
+
+    std::stringstream ss2(lineStr);
+    while (getline(ss2, item, ' '))
+    {
+      double x = atof(item.c_str());
+      getline(ss2, item, ' ');
+      double y = atof(item.c_str());
+      Vertex newV(x, y);
+      goalPolygon->vertices.push_back(newV);
+    }
+  }
+}
+
 // Given an already opened file, reads in the next state
 bool World::loadNextState(std::ifstream& file)
 {

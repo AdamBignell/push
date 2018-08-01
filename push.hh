@@ -204,6 +204,7 @@ public:
   void updateGoalsFromString(std::string &goalStr);
   void updateLightsFromString(std::string &lightStr);
   void updateSuccessFromString(std::string &lightStr);
+  void loadGoalPolygon(std::string &inputFile);
 
   // Note that all the information we need is part of the world already
   // Hence the argumentless call

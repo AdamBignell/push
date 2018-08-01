@@ -447,7 +447,7 @@ int main(int argc, char *argv[])
     robotArea = (apothem * (robot_size/4.0)) * 6.0;
   }
 
-  uint64_t maxsteps = 1000000L;
+  uint64_t maxsteps = 100000L;
 
   fprintf(stderr, "Initializing.");
   std::vector<Goal*> tempGoals; //For recursion purposes
@@ -513,6 +513,7 @@ int main(int argc, char *argv[])
     // It doesn't make sense to skip frames here
     world->draw_interval = 1;
     std::ifstream file(inputFileName);
+    world->loadGoalPolygon(inputFileName);
     while (!world->RequestShutdown() && running)
     {
       if (!world->replay_paused)
