@@ -201,7 +201,7 @@ void World::UpdateLightPattern(double goalx, double goaly, double probOn, double
     std::sort(lightsOn.begin(), lightsOn.end());
     double lightsTurnedOff = 0;
     int i = 0;
-    while (lightsTurnedOff / lightsOn.size() < cornerRate*drag || lightsTurnedOff / lightsOn.size() == 1.0)
+    while (lightsTurnedOff / lightsOn.size() < cornerRate || lightsTurnedOff / lightsOn.size() == 1.0)
     {
       SetLightIntensity(std::get<1>(lightsOn[lightsTurnedOff]), 0);
       lightsTurnedOff += 1.0;

@@ -438,8 +438,8 @@ int main(int argc, char *argv[])
   double robotArea;
   if (robot_type == Robot::SHAPE_RECT)
     robotArea = robot_size*robot_size;
-  else if (robot_type == Robot::SHAPE_CIRC)
-    robotArea = M_PI*((robot_size/2)*(robot_size/2));
+  //else if (robot_type == Robot::SHAPE_CIRC)
+   // robotArea = M_PI*((robot_size/2)*(robot_size/2));
   else // robot_size = HEX
   {
     //double perimeter = 6*(robot_size/2);
@@ -473,7 +473,6 @@ int main(int argc, char *argv[])
   // These lines prime the polygon
   if (world->havePolygon && flare > 0)
   {
-    world->polygon->markConcavePoints();
     // Adjust the polygon to account for corners
     // Note that we need to be centered around the origin
     world->polygon->translate(-goalx, -goaly, true);
@@ -487,6 +486,7 @@ int main(int argc, char *argv[])
   double radius = RADMAX;
   if (world->havePolygon)
   {
+    world->polygon->markConcavePoints();
     RADMAX = world->GetSetRadMax(world->polygon);
     radius = world->polygon->getDistFromPoint(goalx, goaly);
   }
@@ -496,9 +496,10 @@ int main(int argc, char *argv[])
   // Can stop the holding behaviour by setting this to false
   // holdFor is set automatically below; it should be 0 here to begin
   bool holdAtMin = true;
-  double holdTime = 2500/updateRate;
-  if (pFileName == "")
-     holdTime = 2500/updateRate; // Circles are way more robuts. Need not waste time.
+  double holdTime = 1;
+  //holdTime = 2500/updateRate; // THIS WAS THE OLD VALUE OF HOLD TIME
+  
+  // This is not a parameter leave it at 0
   double holdFor = 0;
 
 
@@ -538,6 +539,11 @@ int main(int argc, char *argv[])
       world->Step(timeStep);
       world->paused = true;
     }
+    world->replay_paused = true;
+    while(world->replay_paused)
+    {
+      world->Step(timeStep);
+    }
     return 0; // Finished reading the file, close
   }
 
@@ -555,7 +561,7 @@ int main(int argc, char *argv[])
       if (holdFor != 0 && holdAtMin)
       {
         // Don't change radius
-        world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH, 1.0 - (holdFor / holdTime));
+        world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH, drag);
         holdFor--;
         // If we are done contracting, we need to grow above RadMin threshold
         if (holdFor == 0)
@@ -608,7 +614,10 @@ int main(int argc, char *argv[])
           }
           // Turns all necessary lights on for a specific amount of contraction (radius)
           // The polygon will automatically be used if it is well defined
-          world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH, 0);
+          if (drag != 0)
+            world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH, drag);
+          else
+            world->UpdateLightPattern(goalx, goaly, 1, radius, PATTWIDTH, 0);
         }
 #if 0
               for( int i=0; i<18; i+=2 )
