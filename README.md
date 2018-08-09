@@ -35,7 +35,7 @@ Otherwise, you may specify the following options:
 | -i | Input file name, loads a replay | String, specify exact name|
 | -x | Run without GUI | No Argument |
 | -f | Set flare of corners | Positive Float |
-| -d | Set drag speed | 0 <= Float <= 1 |
+| -d | Percentage of lights closest to convex vertices to turn off | 0 <= Float <= 1 |
 
 A typical run command:
 
