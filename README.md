@@ -36,6 +36,7 @@ Otherwise, you may specify the following options:
 | -x | Run without GUI | No Argument |
 | -f | Set flare of corners | Positive Float |
 | -d | Percentage of lights closest to convex vertices to turn off | 0 <= Float <= 1 |
+| -c | Switch to circle | Integer, 1 = Switch |
 
 A typical run command:
 
